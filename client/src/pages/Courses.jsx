@@ -1,9 +1,20 @@
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import api from '../api/axios';
 import PageHeader from '../components/common/PageHeader';
-import Reveal from '../components/common/Reveal';
-import SAMPLE_COURSES from '../data/sampleCourses';
+import CourseCard from '../components/courses/CourseCard';
 
 export default function Courses() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get('/courses')
+      .then((res) => setCourses(res.data.courses))
+      .catch((err) => setError(err.response?.data?.message || 'Failed to load courses'))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <>
       <PageHeader
@@ -13,20 +24,18 @@ export default function Courses() {
       />
 
       <section className="section section--flush-top">
-        <div className="card-grid">
-          {SAMPLE_COURSES.map((course, i) => (
-            <Reveal as="div" className="card" key={course.slug} index={i}>
-              <div className="card__image-placeholder" />
-              <h3>{course.title}</h3>
-              <p>{course.summary}</p>
-              <div className="card__tags">
-                <span className="badge">{course.level}</span>{' '}
-                <span className="badge badge--ai">&lt;AI_SKILLS/&gt;</span>
-              </div>
-              <Link to={`/courses/${course.slug}`} className="btn btn--ghost">View Course</Link>
-            </Reveal>
-          ))}
-        </div>
+        {error && <p className="form-error">{error}</p>}
+        {loading ? (
+          <p>Loading courses...</p>
+        ) : courses.length === 0 ? (
+          <p>No courses published yet — check back soon.</p>
+        ) : (
+          <div className="course-grid">
+            {courses.map((course, i) => (
+              <CourseCard course={course} index={i} key={course._id} />
+            ))}
+          </div>
+        )}
       </section>
     </>
   );

@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
+import CourseRegister from './pages/CourseRegister';
 import Services from './pages/Services';
 import Mentorship from './pages/Mentorship';
 import Space from './pages/Space';
@@ -31,6 +32,15 @@ import StudentDashboard from './pages/student/Dashboard';
 import StudentNotifications from './pages/student/Notifications';
 import InstructorDashboard from './pages/instructor/Dashboard';
 import InstructorNotifications from './pages/instructor/Notifications';
+import AdminCourses from './pages/admin/academy/Courses';
+import AdminCourseForm from './pages/admin/academy/CourseForm';
+import AdminCourseContent from './pages/admin/academy/CourseContent';
+import AdminCohorts from './pages/admin/academy/Cohorts';
+import AdminCohortForm from './pages/admin/academy/CohortForm';
+import AdminApprovals from './pages/admin/academy/Approvals';
+import AdminRegistrations from './pages/admin/academy/Registrations';
+import InstructorCourses from './pages/instructor/academy/Courses';
+import InstructorCourseContent from './pages/instructor/academy/CourseContent';
 
 function App() {
   return (
@@ -39,7 +49,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
         <Route path="/courses" element={<Courses />} />
-        <Route path="/courses/:slug" element={<CourseDetail />} />
+        <Route path="/courses/:id" element={<CourseDetail />} />
+        <Route path="/courses/:id/register" element={<CourseRegister />} />
         <Route path="/services" element={<Services />} />
         <Route path="/mentorship" element={<Mentorship />} />
         <Route path="/space" element={<Space />} />
@@ -64,6 +75,8 @@ function App() {
         <Route path="/instructor" element={<InstructorLayout />}>
           <Route index element={<InstructorDashboard />} />
           <Route path="notifications" element={<InstructorNotifications />} />
+          <Route path="academy/courses" element={<InstructorCourses />} />
+          <Route path="academy/courses/:courseId" element={<InstructorCourseContent />} />
         </Route>
       </Route>
 
@@ -77,6 +90,15 @@ function App() {
           <Route path="careers/:id/edit" element={<JobForm />} />
           <Route path="careers/:id/applications" element={<JobApplications />} />
           <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="academy/courses" element={<AdminCourses />} />
+          <Route path="academy/courses/new" element={<AdminCourseForm />} />
+          <Route path="academy/courses/:id/edit" element={<AdminCourseForm />} />
+          <Route path="academy/courses/:id/content" element={<AdminCourseContent />} />
+          <Route path="academy/cohorts" element={<AdminCohorts />} />
+          <Route path="academy/cohorts/new" element={<AdminCohortForm />} />
+          <Route path="academy/cohorts/:id/edit" element={<AdminCohortForm />} />
+          <Route path="academy/approvals" element={<AdminApprovals />} />
+          <Route path="academy/registrations" element={<AdminRegistrations />} />
         </Route>
       </Route>
     </Routes>

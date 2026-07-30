@@ -12,7 +12,7 @@ const INSTRUCTOR_NAV_GROUPS = [
   {
     label: 'Academy',
     items: [
-      { to: '/instructor/cohorts', label: 'My Cohorts', disabled: true },
+      { to: '/instructor/academy/courses', label: 'My Courses' },
       { to: '/instructor/students', label: 'Students', disabled: true },
       { to: '/instructor/grading', label: 'Grading', disabled: true },
     ],

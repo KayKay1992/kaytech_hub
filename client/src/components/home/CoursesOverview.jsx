@@ -1,15 +1,22 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Reveal from '../common/Reveal';
-
-// Static placeholder cards for now — will be replaced with real course data
-// once the Academy module (courses, cohorts) is built. Every course bundles
-// AI skills, hence the Circuit Teal "<AI_SKILLS/>" tag on each one.
-const SAMPLE_COURSES = [
-  { title: 'Web Development Fundamentals', level: 'Beginner' },
-  { title: 'Data Analysis with Python', level: 'Intermediate' },
-  { title: 'Product Management Bootcamp', level: 'Beginner' },
-];
+import CourseCard from '../courses/CourseCard';
+import api from '../../api/axios';
 
 export default function CoursesOverview() {
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/courses')
+      .then((res) => setCourses(res.data.courses.slice(0, 3)))
+      .catch(() => setCourses([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (!loading && courses.length === 0) return null;
+
   return (
     <section className="section">
       <Reveal as="div" className="section__header">
@@ -18,18 +25,21 @@ export default function CoursesOverview() {
         <p>A taste of what you can learn at KayTech Academy.</p>
       </Reveal>
 
-      <div className="card-grid">
-        {SAMPLE_COURSES.map((course, i) => (
-          <Reveal as="div" className="card" key={course.title} index={i}>
-            <div className="card__image-placeholder" />
-            <h3>{course.title}</h3>
-            <div>
-              <span className="badge">{course.level}</span>{' '}
-              <span className="badge badge--ai">&lt;AI_SKILLS/&gt;</span>
-            </div>
-          </Reveal>
-        ))}
-      </div>
+      {loading ? (
+        <p>Loading courses...</p>
+      ) : (
+        <>
+          <div className="course-grid">
+            {courses.map((course, i) => (
+              <CourseCard course={course} index={i} key={course._id} />
+            ))}
+          </div>
+
+          <div className="courses-overview__more">
+            <Link to="/courses" className="btn btn--primary btn--lg">View More Courses</Link>
+          </div>
+        </>
+      )}
     </section>
   );
 }

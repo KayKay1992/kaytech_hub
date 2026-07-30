@@ -29,8 +29,24 @@ Public signup does NOT let someone choose their own role. Instead:
 - Login redirect: `student` → student dashboard, `instructor` → instructor dashboard, `admin` → admin panel, `member` → homepage.
 - **Important distinction:** the invite code only grants the account *role*. It does NOT enroll a student into a specific cohort, or assign an instructor to a specific course — those remain separate admin actions in the Academy module (Enrollment and Cohort assignment).
 
+## User Management — already built (pulled forward from Site-Wide module)
+Admin can already: view all users (filter/search by role), change any user's role directly (no invite code needed — e.g. promote member → instructor, instructor → admin, demote instructor → member), delete any user (with confirmation), and delete/revoke any invite code. Don't rebuild this when reaching the Site-Wide Admin module later — just extend it if needed.
+
 ## Instructor payouts — calculated automatically, paid manually
 `InstructorPayout.total_amount` is always `students_count × rate_per_student`, computed by the system — never entered manually. The actual payout still happens offline; admin just marks it `paid` once they've sent the money.
+
+## Design System — already established, reuse it everywhere
+Colors: Ink Navy `#10142B` (dark backgrounds), Cloud `#F5F6FA` (page background), Signal Amber `#FFB020` (primary buttons/accents), Circuit Teal `#2DD4BF` (AI-related tags/badges only), Slate `#5B6072` (muted text).
+Fonts: Clash Display (headings), Inter (body), JetBrains Mono (small eyebrow/tag labels styled like code).
+Card style: white background, soft shadow, rounded corners, monospace eyebrow tag, hover lift + amber glow border. Buttons: one consistent solid-amber-pill primary style and one ghost/outline secondary style, used everywhere. Scroll-triggered fade+slide-up reveals (staggered), respecting `prefers-reduced-motion`. The animated terminal-typing effect is a Home-page-only signature moment — don't repeat it elsewhere.
+**Mobile drawers/sidebars (nav menu, Admin/Student/Instructor sidebars):** must use a shared, reliable pattern — partial width (not full screen), dimmed overlay behind it, high z-index above page content, and body scroll locked while open. This bug has recurred before — don't regress it.
+When building new pages, apply this existing system rather than introducing new colors/fonts/patterns.
+
+## Career module — already built
+Public "Careers" page lists open `JobListing`s (title, description, requirements, location, type, status) with an "Apply Now" form creating a `JobApplication` (full_name, email, phone, resume_file_url via upload utility, cover_note, status). Admin manages listings and views applications per listing.
+
+## Notification system — already built
+Admin has a "Notifications" page with two views: **Sent** (compose a `Notification` — title, message, target_type of all/all_students/all_instructors/specific_user — and view history) and **Inbox** (incoming `ContactMessage`s from the public Contact form, linked to a `sender_id` when the submitter was logged in). Students/instructors have their own "Notifications" page showing messages targeted at them, with read/unread state tracked via `NotificationRead`.
 
 ## Conventions
 - Every model that's admin-created and shown publicly (Course, ScholarshipProgram, Service, MentorshipProgram, WorkspacePlan, BlogPost) has an `image_url` field, set via the shared upload utility.
@@ -50,7 +66,11 @@ R2_ENDPOINT_URL=
 ```
 
 ## Commands
-(Fill these in once the project is scaffolded — e.g. `npm run dev`, `npm test`, `npm run build`.)
+Fill these in based on your actual project setup once confirmed — typically for a MERN split frontend/backend:
+```
+cd client && npm run dev     # start React frontend
+cd server && npm run dev     # start Express backend
+```
 
 ## Workflow
 - Build one module/feature at a time, fully working, before moving to the next — don't try to build multiple modules in one pass.

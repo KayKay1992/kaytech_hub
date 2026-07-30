@@ -16,6 +16,9 @@ const adminJobRoutes = require('./routes/adminJobRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const adminNotificationRoutes = require('./routes/adminNotificationRoutes');
+const courseRoutes = require('./routes/courseRoutes');
+const adminAcademyRoutes = require('./routes/adminAcademyRoutes');
+const instructorAcademyRoutes = require('./routes/instructorAcademyRoutes');
 
 const app = express();
 
@@ -36,6 +39,9 @@ app.use('/api/admin', adminJobRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/admin', adminNotificationRoutes);
+app.use('/api/courses', courseRoutes);
+app.use('/api/admin', adminAcademyRoutes);
+app.use('/api/instructor', instructorAcademyRoutes);
 
 // 404 handler
 app.use('/api', (req, res) => {

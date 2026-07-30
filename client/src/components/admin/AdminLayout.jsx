@@ -18,7 +18,12 @@ const ADMIN_NAV_GROUPS = [
   },
   {
     label: 'Academy',
-    items: [{ to: '/admin/academy', label: 'Courses & Cohorts', disabled: true }],
+    items: [
+      { to: '/admin/academy/courses', label: 'Courses' },
+      { to: '/admin/academy/cohorts', label: 'Cohorts' },
+      { to: '/admin/academy/approvals', label: 'Approvals' },
+      { to: '/admin/academy/registrations', label: 'Registrations' },
+    ],
   },
   {
     label: 'Hub',
