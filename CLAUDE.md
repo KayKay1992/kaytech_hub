@@ -2,7 +2,7 @@
 
 ## Stack
 - MERN: MongoDB (via Mongoose), Express, React, Node.js
-- Auth: JWT + bcrypt. Role stored in the token: `student`, `instructor`, `admin`
+- Auth: JWT + bcrypt. Roles: `student`, `instructor`, `admin`, `member`. Student and instructor accounts are **not** publicly self-registerable — see Invite Code System below.
 - File storage: Cloudflare R2 (S3-compatible API via AWS SDK) — for both documents (PDFs) and images
 - Payments: **offline only for now**. No payment gateway. Every payment record starts `pending` and admin manually flips it to `paid` after receiving money via bank transfer/cash. Do not add Paystack/Flutterwave/Stripe unless explicitly asked.
 
@@ -20,6 +20,14 @@ This app has three independent business lines sharing one login system. Don't le
 3. **Space** — co-working/research space plans and subscriptions. Standalone — not linked to `User`, `Course`, or any other model. Registration is a detailed form (no login) — full name, email, phone, address, occupation/purpose, valid ID type + number, emergency contact — since members are physically on-site.
 
 **Rule:** `Cohort`, `Enrollment`, and `Attendance` models belong to Academy only. Never reference them from Hub or Space features.
+
+## Invite Code System — how signup actually works
+Public signup does NOT let someone choose their own role. Instead:
+- Admin generates an `InviteCode` (unique code, tied to a role: `student` or `instructor`, with an expiry).
+- Signing up with a valid, unused, non-expired code grants that role.
+- Signing up with no code, or an invalid/used/expired one, still creates an account — but with role `member` (no elevated permissions, same experience as a logged-out visitor).
+- Login redirect: `student` → student dashboard, `instructor` → instructor dashboard, `admin` → admin panel, `member` → homepage.
+- **Important distinction:** the invite code only grants the account *role*. It does NOT enroll a student into a specific cohort, or assign an instructor to a specific course — those remain separate admin actions in the Academy module (Enrollment and Cohort assignment).
 
 ## Instructor payouts — calculated automatically, paid manually
 `InstructorPayout.total_amount` is always `students_count × rate_per_student`, computed by the system — never entered manually. The actual payout still happens offline; admin just marks it `paid` once they've sent the money.
