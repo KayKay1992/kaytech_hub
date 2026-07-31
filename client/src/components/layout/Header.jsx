@@ -17,9 +17,10 @@ const NAV_LINKS = [
   { to: '/blog', label: 'Blog' },
   { to: '/events', label: 'Events' },
   { to: '/careers', label: 'Careers' },
+  { to: '/scholarships', label: 'Scholarships' },
   { to: '/contact', label: 'Contact' },
 ];
-const MORE_LABELS = ['Blog', 'Events', 'Careers'];
+const MORE_LABELS = ['Blog', 'Events', 'Careers', 'Scholarships'];
 const PRIMARY_LINKS = NAV_LINKS.filter((l) => !MORE_LABELS.includes(l.label));
 const MORE_LINKS = NAV_LINKS.filter((l) => MORE_LABELS.includes(l.label));
 

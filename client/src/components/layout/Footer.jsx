@@ -13,6 +13,7 @@ export default function Footer() {
           <div>
             <h4>Explore</h4>
             <Link to="/courses">Courses</Link>
+            <Link to="/scholarships">Scholarships</Link>
             <Link to="/services">Services</Link>
             <Link to="/mentorship">Mentorship</Link>
             <Link to="/space">Space</Link>

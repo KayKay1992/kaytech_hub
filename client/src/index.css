@@ -555,6 +555,123 @@ a:hover { color: var(--color-amber); }
 .banner--accent { background: color-mix(in srgb, var(--color-amber) 16%, transparent); }
 .banner h2 { margin-bottom: 4px; }
 
+/* Scholarship promo card (Home) — dark Ink Navy panel, same circuit-grid
+   language as .form-panel, with a glowing icon badge and a live open-program
+   count. Lifts slightly on hover like the rest of the card system. */
+.scholarship-promo {
+  position: relative;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  border-radius: var(--radius);
+  padding: 48px 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 176, 32, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(45, 212, 191, 0.08), transparent 45%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0px, rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0px, rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent 40px),
+    var(--color-navy);
+  box-shadow: 0 24px 60px rgba(16, 20, 43, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.scholarship-promo:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 70px rgba(16, 20, 43, 0.4), 0 0 0 1px rgba(255, 176, 32, 0.25);
+}
+.scholarship-promo__glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+}
+.scholarship-promo__glow--one { width: 220px; height: 220px; background: rgba(255, 176, 32, 0.18); top: -60px; left: -40px; }
+.scholarship-promo__glow--two { width: 260px; height: 260px; background: rgba(45, 212, 191, 0.12); bottom: -80px; right: -40px; }
+.scholarship-promo__content {
+  position: relative;
+  z-index: 1;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.scholarship-promo__title { color: #fff; font-size: 2rem; margin: 0; }
+.scholarship-promo__description { color: rgba(255, 255, 255, 0.72); margin: 0; }
+.scholarship-promo__stat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+.scholarship-promo__stat strong { color: var(--color-amber); }
+.scholarship-promo__stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-amber);
+  animation: scholarship-dot-pulse 2s ease-out infinite;
+  flex-shrink: 0;
+}
+.scholarship-promo__cta { align-self: flex-start; margin-top: 6px; }
+.scholarship-promo__badge-wrap {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 132px;
+  height: 132px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scholarship-promo__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 176, 32, 0.35);
+  animation: scholarship-spin 18s linear infinite;
+}
+.scholarship-promo__badge {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-amber) 16%, transparent);
+  color: var(--color-amber);
+  box-shadow: 0 0 0 1px rgba(255, 176, 32, 0.3);
+  animation: scholarship-float 4s ease-in-out infinite;
+}
+.scholarship-promo__badge svg { width: 40px; height: 40px; }
+@keyframes scholarship-dot-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(255, 176, 32, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(255, 176, 32, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 176, 32, 0); }
+}
+@keyframes scholarship-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes scholarship-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scholarship-promo, .scholarship-promo__badge, .scholarship-promo__ring, .scholarship-promo__stat-dot {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+@media (max-width: 780px) {
+  .scholarship-promo { flex-direction: column; text-align: center; padding: 36px 28px; }
+  .scholarship-promo__content { align-items: center; }
+  .scholarship-promo__cta { align-self: center; }
+}
+
 .cta {
   text-align: center;
   padding: 72px 24px;

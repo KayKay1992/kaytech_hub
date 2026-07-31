@@ -17,6 +17,8 @@ import Blog from './pages/Blog';
 import Events from './pages/Events';
 import Careers from './pages/Careers';
 import JobDetail from './pages/JobDetail';
+import Scholarships from './pages/Scholarships';
+import ScholarshipDetail from './pages/ScholarshipDetail';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -27,6 +29,9 @@ import Users from './pages/admin/Users';
 import Jobs from './pages/admin/Jobs';
 import JobForm from './pages/admin/JobForm';
 import JobApplications from './pages/admin/JobApplications';
+import AdminScholarships from './pages/admin/Scholarships';
+import ScholarshipForm from './pages/admin/ScholarshipForm';
+import AdminScholarshipApplications from './pages/admin/ScholarshipApplications';
 import AdminNotifications from './pages/admin/Notifications';
 import StudentDashboard from './pages/student/Dashboard';
 import StudentNotifications from './pages/student/Notifications';
@@ -58,6 +63,8 @@ function App() {
         <Route path="/events" element={<Events />} />
         <Route path="/careers" element={<Careers />} />
         <Route path="/careers/:id" element={<JobDetail />} />
+        <Route path="/scholarships" element={<Scholarships />} />
+        <Route path="/scholarships/:id" element={<ScholarshipDetail />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -89,6 +96,10 @@ function App() {
           <Route path="careers/new" element={<JobForm />} />
           <Route path="careers/:id/edit" element={<JobForm />} />
           <Route path="careers/:id/applications" element={<JobApplications />} />
+          <Route path="scholarships" element={<AdminScholarships />} />
+          <Route path="scholarships/new" element={<ScholarshipForm />} />
+          <Route path="scholarships/:id/edit" element={<ScholarshipForm />} />
+          <Route path="scholarships/:id/applications" element={<AdminScholarshipApplications />} />
           <Route path="notifications" element={<AdminNotifications />} />
           <Route path="academy/courses" element={<AdminCourses />} />
           <Route path="academy/courses/new" element={<AdminCourseForm />} />

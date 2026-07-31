@@ -17,6 +17,10 @@ const ADMIN_NAV_GROUPS = [
     items: [{ to: '/admin/careers', label: 'Job Listings' }],
   },
   {
+    label: 'Scholarships',
+    items: [{ to: '/admin/scholarships', label: 'Programs' }],
+  },
+  {
     label: 'Academy',
     items: [
       { to: '/admin/academy/courses', label: 'Courses' },
