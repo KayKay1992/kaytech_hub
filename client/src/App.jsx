@@ -42,7 +42,6 @@ import StudentCertificates from './pages/student/Certificates';
 import InstructorDashboard from './pages/instructor/Dashboard';
 import InstructorNotifications from './pages/instructor/Notifications';
 import AdminCourses from './pages/admin/academy/Courses';
-import AdminCourseForm from './pages/admin/academy/CourseForm';
 import AdminCourseContent from './pages/admin/academy/CourseContent';
 import AdminCohorts from './pages/admin/academy/Cohorts';
 import AdminCohortForm from './pages/admin/academy/CohortForm';
@@ -122,8 +121,6 @@ function App() {
           <Route path="scholarships/:id/applications" element={<AdminScholarshipApplications />} />
           <Route path="notifications" element={<AdminNotifications />} />
           <Route path="academy/courses" element={<AdminCourses />} />
-          <Route path="academy/courses/new" element={<AdminCourseForm />} />
-          <Route path="academy/courses/:id/edit" element={<AdminCourseForm />} />
           <Route path="academy/courses/:id/content" element={<AdminCourseContent />} />
           <Route path="academy/cohorts" element={<AdminCohorts />} />
           <Route path="academy/cohorts/new" element={<AdminCohortForm />} />

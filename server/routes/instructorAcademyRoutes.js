@@ -9,6 +9,7 @@ const {
   updateLesson,
   deleteLesson,
   listMyCohorts,
+  getDashboardStats,
   listCohortAssignments,
   createAssignment,
   updateAssignment,
@@ -44,6 +45,7 @@ router.patch('/lessons/:id', lessonUpload, updateLesson);
 router.delete('/lessons/:id', deleteLesson);
 
 router.get('/cohorts', listMyCohorts);
+router.get('/dashboard/stats', getDashboardStats);
 router.get('/cohorts/:cohortId/assignments', listCohortAssignments);
 
 router.post('/assignments', createAssignment);

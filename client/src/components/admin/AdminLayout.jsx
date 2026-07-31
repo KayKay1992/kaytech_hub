@@ -1,47 +1,52 @@
+import {
+  Award,
+  Bell,
+  Boxes,
+  Briefcase,
+  Building2,
+  CheckSquare,
+  ClipboardList,
+  CreditCard,
+  Globe,
+  KeyRound,
+  LayoutDashboard,
+  BookOpen,
+  Users2,
+  UsersRound,
+  Wallet,
+} from 'lucide-react';
 import DashboardLayout from '../dashboard/DashboardLayout';
 
-// Sections below map to future modules. Each will get its own routes/pages
-// as that module is built — this sidebar is the plug-in point for all of them.
 const ADMIN_NAV_GROUPS = [
   {
-    label: 'Overview',
+    label: 'Main',
     items: [
-      { to: '/admin', label: 'Dashboard', end: true },
-      { to: '/admin/users', label: 'Users' },
-      { to: '/admin/invites', label: 'Invite Codes' },
-      { to: '/admin/notifications', label: 'Notifications' },
+      { to: '/admin', label: 'Dashboard', end: true, icon: LayoutDashboard },
+      { to: '/admin/notifications', label: 'Notifications', icon: Bell },
     ],
-  },
-  {
-    label: 'Careers',
-    items: [{ to: '/admin/careers', label: 'Job Listings' }],
-  },
-  {
-    label: 'Scholarships',
-    items: [{ to: '/admin/scholarships', label: 'Programs' }],
   },
   {
     label: 'Academy',
     items: [
-      { to: '/admin/academy/courses', label: 'Courses' },
-      { to: '/admin/academy/cohorts', label: 'Cohorts' },
-      { to: '/admin/academy/approvals', label: 'Approvals' },
-      { to: '/admin/academy/registrations', label: 'Registrations' },
-      { to: '/admin/academy/payments', label: 'Payments' },
-      { to: '/admin/academy/payouts', label: 'Payouts' },
+      { to: '/admin/academy/courses', label: 'Courses', icon: BookOpen },
+      { to: '/admin/academy/cohorts', label: 'Cohorts', icon: Users2 },
+      { to: '/admin/academy/approvals', label: 'Approvals', icon: CheckSquare },
+      { to: '/admin/academy/registrations', label: 'Registrations', icon: ClipboardList },
+      { to: '/admin/academy/payments', label: 'Payments', icon: CreditCard },
+      { to: '/admin/academy/payouts', label: 'Payouts', icon: Wallet },
+      { to: '/admin/scholarships', label: 'Scholarships', icon: Award },
     ],
   },
   {
-    label: 'Hub',
-    items: [{ to: '/admin/hub', label: 'Services & Mentorship', disabled: true }],
-  },
-  {
-    label: 'Space',
-    items: [{ to: '/admin/space', label: 'Plans & Members', disabled: true }],
-  },
-  {
-    label: 'Site',
-    items: [{ to: '/admin/site', label: 'Blog & Settings', disabled: true }],
+    label: 'Management',
+    items: [
+      { to: '/admin/users', label: 'Users', icon: UsersRound },
+      { to: '/admin/invites', label: 'Invite Codes', icon: KeyRound },
+      { to: '/admin/careers', label: 'Job Listings', icon: Briefcase },
+      { to: '/admin/hub', label: 'Services & Mentorship', icon: Boxes, disabled: true },
+      { to: '/admin/space', label: 'Plans & Members', icon: Building2, disabled: true },
+      { to: '/admin/site', label: 'Blog & Settings', icon: Globe, disabled: true },
+    ],
   },
 ];
 

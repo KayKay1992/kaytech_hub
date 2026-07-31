@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Reveal from '../../components/common/Reveal';
+import StatCards from '../../components/common/StatCards';
 import api from '../../api/axios';
 
 const greetingForHour = (hour) => (hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening');
@@ -62,13 +63,8 @@ export default function Dashboard() {
 
       {error && <p className="form-error" style={{ marginTop: 20 }}>{error}</p>}
 
-      <div className="stat-grid" style={{ marginTop: 32 }}>
-        {STATS.map((stat, i) => (
-          <Reveal as="div" className="stat-card" key={stat.label} index={i}>
-            <span className="stat-card__value">{stat.value}</span>
-            <span className="stat-card__label">{stat.label}</span>
-          </Reveal>
-        ))}
+      <div style={{ marginTop: 32 }}>
+        <StatCards stats={STATS} />
       </div>
 
       <div className="course-layout" style={{ marginTop: 40 }}>

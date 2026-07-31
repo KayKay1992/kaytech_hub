@@ -2,8 +2,9 @@ import { useEffect } from 'react';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
 // Generic centered modal — backdrop click, Escape, or the X button close it.
-// Locks page scroll while open.
-export default function Modal({ title, onClose, children }) {
+// Locks page scroll while open. `size="lg"` widens it for forms with more
+// fields (e.g. an image upload + several text inputs).
+export default function Modal({ title, onClose, children, size }) {
   useBodyScrollLock(true);
 
   useEffect(() => {
@@ -16,7 +17,7 @@ export default function Modal({ title, onClose, children }) {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
+      <div className={`modal${size === 'lg' ? ' modal--lg' : ''}`} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className="modal__header">
           <h3>{title}</h3>
           <button type="button" className="modal__close" onClick={onClose} aria-label="Close">&times;</button>

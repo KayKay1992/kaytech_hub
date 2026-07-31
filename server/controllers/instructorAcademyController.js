@@ -326,11 +326,69 @@ const deleteLesson = async (req, res) => {
 const listMyCohorts = async (req, res) => {
   try {
     const cohorts = await Cohort.find({ instructor_id: req.user._id })
-      .populate('course_id', 'title')
+      .populate('course_id', 'title image_url')
       .sort({ start_date: -1 });
     res.json({ cohorts });
   } catch (err) {
     res.status(500).json({ message: 'Failed to load your cohorts', error: err.message });
+  }
+};
+
+// GET /api/instructor/dashboard/stats — the one aggregate no other endpoint
+// exposes: how many submissions across every assignment I've created still
+// need a grade, a quick list of the most recent ones, and my next few
+// assignment due dates. Everything else on my dashboard (cohort roster,
+// payout totals, notifications) already has a dedicated endpoint.
+const getDashboardStats = async (req, res) => {
+  try {
+    const cohortIds = await Cohort.find({ instructor_id: req.user._id }).distinct('_id');
+    const assignments = await Assignment.find({ cohort_id: { $in: cohortIds } })
+      .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } })
+      .sort({ due_date: 1 });
+    const assignmentById = new Map(assignments.map((a) => [String(a._id), a]));
+
+    const submissions = await Submission.find({ assignment_id: { $in: assignments.map((a) => a._id) } })
+      .populate('student_id', 'name')
+      .sort({ submitted_at: -1 });
+
+    const totalSubmissions = submissions.length;
+    const gradedSubmissions = submissions.filter((s) => s.score !== null && s.score !== undefined).length;
+
+    const recentUngraded = submissions
+      .filter((s) => s.score === null || s.score === undefined)
+      .slice(0, 5)
+      .map((s) => {
+        const assignment = assignmentById.get(String(s.assignment_id));
+        return {
+          _id: s._id,
+          assignment_id: s.assignment_id,
+          assignment_title: assignment?.title || 'Assignment',
+          cohort_name: assignment?.cohort_id?.name || '',
+          student_name: s.student_id?.name || 'Student',
+          submitted_at: s.submitted_at,
+        };
+      });
+
+    const upcomingAssignments = assignments
+      .filter((a) => new Date(a.due_date) >= new Date())
+      .slice(0, 5)
+      .map((a) => ({
+        _id: a._id,
+        title: a.title,
+        due_date: a.due_date,
+        cohort_name: a.cohort_id?.name || '',
+        course_title: a.cohort_id?.course_id?.title || '',
+      }));
+
+    res.json({
+      totalSubmissions,
+      gradedSubmissions,
+      pendingGrading: totalSubmissions - gradedSubmissions,
+      recentUngraded,
+      upcomingAssignments,
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load dashboard stats', error: err.message });
   }
 };
 
@@ -597,6 +655,7 @@ module.exports = {
   updateLesson,
   deleteLesson,
   listMyCohorts,
+  getDashboardStats,
   listCohortAssignments,
   createAssignment,
   updateAssignment,

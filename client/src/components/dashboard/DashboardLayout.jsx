@@ -1,15 +1,17 @@
-import { useState } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
 import DashboardSidebar from './DashboardSidebar';
-import NotificationBell from './NotificationBell';
+import DashboardTopbar from './DashboardTopbar';
 import { useAuth } from '../../context/AuthContext';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
+const COLLAPSE_KEY = 'kaytech_sidebar_collapsed';
+
 // Shared responsive shell for every role-gated dashboard (Admin, Student,
-// Instructor). Desktop: sidebar is always visible in the normal layout.
-// Mobile: sidebar is a slide-in drawer, opened via the hamburger button in
-// the topbar, closed via the same button, an overlay click, or the
-// sidebar's own close (X) button.
+// Instructor). Desktop: sidebar is fixed full-height, collapsible to an
+// icon-only rail (remembered across visits). Mobile: sidebar is a slide-in
+// drawer, opened via the hamburger button in the topbar, closed via the
+// same button, an overlay click, or the sidebar's own close (X) button.
 //
 // `notificationsBasePath` (e.g. "/student") is optional — pass it to show
 // the unread-notifications bell in the topbar. Admin doesn't pass it.
@@ -17,6 +19,7 @@ export default function DashboardLayout({ navGroups, brandLabel, notificationsBa
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1');
 
   const closeSidebar = () => setSidebarOpen(false);
 
@@ -25,41 +28,38 @@ export default function DashboardLayout({ navGroups, brandLabel, notificationsBa
   // scroll gestures without actually scrolling anything.
   useBodyScrollLock(sidebarOpen);
 
+  useEffect(() => {
+    localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
+  }, [collapsed]);
+
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
   return (
-    <div className="dashboard-layout">
+    <div className={`dashboard-layout${collapsed ? ' is-collapsed' : ''}`}>
       <DashboardSidebar
         navGroups={navGroups}
         brandLabel={brandLabel}
         open={sidebarOpen}
         onClose={closeSidebar}
+        collapsed={collapsed}
+        onToggleCollapsed={() => setCollapsed((v) => !v)}
+        user={user}
+        onLogout={handleLogout}
       />
       {sidebarOpen && <div className="mobile-drawer-overlay" onClick={closeSidebar} />}
 
       <div className="dashboard-layout__main">
-        <header className="dashboard-topbar">
-          <button
-            type="button"
-            className="dashboard-menu-toggle"
-            aria-label={sidebarOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={sidebarOpen}
-            onClick={() => setSidebarOpen((open) => !open)}
-          >
-            <span /><span /><span />
-          </button>
-
-          <Link to="/" className="dashboard-topbar__site-link">&larr; Back to site</Link>
-
-          <div className="dashboard-topbar__actions">
-            {notificationsBasePath && <NotificationBell basePath={notificationsBasePath} />}
-            <span className="dashboard-topbar__user">{user?.name} ({user?.role})</span>
-            <button type="button" className="btn btn--ghost" onClick={handleLogout}>Log out</button>
-          </div>
-        </header>
+        <DashboardTopbar
+          navGroups={navGroups}
+          notificationsBasePath={notificationsBasePath}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((open) => !open)}
+          user={user}
+          onLogout={handleLogout}
+        />
 
         <div className="dashboard-layout__content">
           <Outlet />

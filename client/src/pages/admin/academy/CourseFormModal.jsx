@@ -1,44 +1,30 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
+import { useState } from 'react';
 import api from '../../../api/axios';
+import Modal from '../../../components/common/Modal';
 
 const EMPTY_FORM = {
   title: '', description: '', category: '', duration: '',
   price: '', requirements: '', curriculum: '', status: 'draft',
 };
 
-export default function CourseForm() {
-  const { id } = useParams();
-  const isEditing = Boolean(id);
-  const navigate = useNavigate();
+// Create/edit form for a Course, shown as a modal from the Courses list —
+// internal admin actions stay fast and functional, not a separate page.
+export default function CourseFormModal({ course, onClose, onSaved }) {
+  const isEditing = Boolean(course);
 
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(() => (course ? {
+    title: course.title,
+    description: course.description,
+    category: course.category || '',
+    duration: course.duration || '',
+    price: course.price,
+    requirements: course.requirements || '',
+    curriculum: course.curriculum || '',
+    status: course.status,
+  } : EMPTY_FORM));
   const [imageFile, setImageFile] = useState(null);
-  const [currentImageUrl, setCurrentImageUrl] = useState('');
-  const [loading, setLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!isEditing) return;
-    api.get(`/admin/academy/courses/${id}`)
-      .then((res) => {
-        const course = res.data.course;
-        setForm({
-          title: course.title,
-          description: course.description,
-          category: course.category || '',
-          duration: course.duration || '',
-          price: course.price,
-          requirements: course.requirements || '',
-          curriculum: course.curriculum || '',
-          status: course.status,
-        });
-        setCurrentImageUrl(course.image_url || '');
-      })
-      .catch((err) => setError(err.response?.data?.message || 'Failed to load course'))
-      .finally(() => setLoading(false));
-  }, [id, isEditing]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -51,12 +37,11 @@ export default function CourseForm() {
       Object.entries(form).forEach(([key, value]) => data.append(key, value));
       if (imageFile) data.append('image', imageFile);
 
-      if (isEditing) {
-        await api.patch(`/admin/academy/courses/${id}`, data);
-      } else {
-        await api.post('/admin/academy/courses', data);
-      }
-      navigate('/admin/academy/courses');
+      const res = isEditing
+        ? await api.patch(`/admin/academy/courses/${course._id}`, data)
+        : await api.post('/admin/academy/courses', data);
+
+      onSaved(res.data.course);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save course');
     } finally {
@@ -64,18 +49,9 @@ export default function CourseForm() {
     }
   };
 
-  if (loading) {
-    return <div className="admin-dashboard"><p>Loading...</p></div>;
-  }
-
   return (
-    <div className="admin-dashboard">
-      <h1>{isEditing ? 'Edit Course' : 'New Course'}</h1>
-      <p className="admin-dashboard__subtitle">
-        <Link to="/admin/academy/courses">&larr; Back to Courses</Link>
-      </p>
-
-      <form className="auth-form job-form" onSubmit={handleSubmit}>
+    <Modal title={isEditing ? 'Edit Course' : 'New Course'} onClose={onClose} size="lg">
+      <form className="auth-form" onSubmit={handleSubmit}>
         {error && <p className="form-error">{error}</p>}
 
         <label>
@@ -126,14 +102,14 @@ export default function CourseForm() {
           Cover image
           <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0] || null)} />
         </label>
-        {currentImageUrl && !imageFile && (
-          <img src={currentImageUrl} alt="Current cover" className="admin-image-preview" />
+        {course?.image_url && !imageFile && (
+          <img src={course.image_url} alt="Current cover" className="admin-image-preview" />
         )}
 
         <button type="submit" className="btn btn--primary btn--full" disabled={saving}>
           {saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Course'}
         </button>
       </form>
-    </div>
+    </Modal>
   );
 }

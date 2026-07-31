@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
+import { UsersRound } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import Reveal from '../../components/common/Reveal';
+import ListPageHeader from '../../components/common/ListPageHeader';
+import StatCards from '../../components/common/StatCards';
+import Toolbar from '../../components/admin/Toolbar';
+import StatusPill from '../../components/admin/StatusPill';
+import EmptyState from '../../components/common/EmptyState';
+import Avatar from '../../components/common/Avatar';
 
 const ROLES = ['student', 'instructor', 'admin', 'member'];
+const ROLE_TONE = { admin: 'amber', instructor: 'teal', student: 'navy-outline', member: 'slate-outline' };
 
 export default function Users() {
   const { user: currentUser } = useAuth();
@@ -14,6 +21,27 @@ export default function Users() {
   const [search, setSearch] = useState('');
   const [confirmingId, setConfirmingId] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const [totals, setTotals] = useState({ total: 0, students: 0, instructors: 0 });
+
+  // Unfiltered, independent of search/role filter — the stat row is a
+  // stable overview, not something that should shrink as you filter.
+  const loadTotals = async () => {
+    try {
+      const res = await api.get('/users');
+      const all = res.data.users;
+      setTotals({
+        total: all.length,
+        students: all.filter((u) => u.role === 'student').length,
+        instructors: all.filter((u) => u.role === 'instructor').length,
+      });
+    } catch {
+      // stat row just keeps its last known values
+    }
+  };
+
+  useEffect(() => {
+    loadTotals();
+  }, []);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -43,6 +71,7 @@ export default function Users() {
     try {
       await api.patch(`/users/${id}/role`, { role });
       setUsers((prev) => prev.map((u) => (u._id === id ? { ...u, role } : u)));
+      loadTotals();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update role');
     } finally {
@@ -56,6 +85,7 @@ export default function Users() {
     try {
       await api.delete(`/users/${id}`);
       setUsers((prev) => prev.filter((u) => u._id !== id));
+      loadTotals();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to delete user');
     } finally {
@@ -66,40 +96,35 @@ export default function Users() {
 
   return (
     <div className="admin-dashboard">
-      <Reveal as="div">
-        <h1>Users</h1>
-        <p className="admin-dashboard__subtitle">
-          View every account, change roles, or remove an account.
-        </p>
-      </Reveal>
+      <ListPageHeader title="Users" subtitle="View every account, change roles, or remove an account." />
 
-      <div className="user-filters">
-        <input
-          type="text"
-          placeholder="Search by name or email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <StatCards stats={[
+        { label: 'Total Users', value: totals.total },
+        { label: 'Students', value: totals.students },
+        { label: 'Instructors', value: totals.instructors },
+      ]} />
+
+      <Toolbar search={search} onSearchChange={setSearch} searchPlaceholder="Search by name or email...">
         <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
           <option value="">All roles</option>
           {ROLES.map((r) => (
             <option key={r} value={r}>{r}</option>
           ))}
         </select>
-      </div>
+      </Toolbar>
 
       {error && <p className="form-error">{error}</p>}
 
       <div className="invite-table-wrap">
         {loading ? (
-          <p>Loading users...</p>
+          <p className="payments-empty">Loading users...</p>
         ) : users.length === 0 ? (
-          <p>No users match this filter.</p>
+          <EmptyState icon={UsersRound} title="No users found" message="No users match this filter." />
         ) : (
           <table className="invite-table">
             <thead>
               <tr>
-                <th>Name</th>
+                <th>User</th>
                 <th>Email</th>
                 <th>Role</th>
                 <th>Joined</th>
@@ -112,20 +137,28 @@ export default function Users() {
                 const isBusy = busyId === u._id;
                 return (
                   <tr key={u._id}>
-                    <td>{u.name} {isSelf && <span className="user-you-tag">(you)</span>}</td>
+                    <td>
+                      <div className="admin-table__title-cell">
+                        <Avatar name={u.name} />
+                        <span>{u.name} {isSelf && <span className="user-you-tag">(you)</span>}</span>
+                      </div>
+                    </td>
                     <td>{u.email}</td>
                     <td>
-                      <select
-                        value={u.role}
-                        disabled={isSelf || isBusy}
-                        onChange={(e) => handleRoleChange(u._id, e.target.value)}
-                      >
-                        {ROLES.map((r) => (
-                          <option key={r} value={r}>{r}</option>
-                        ))}
-                      </select>
+                      <div className="admin-table__title-cell">
+                        <StatusPill tone={ROLE_TONE[u.role]}>{u.role}</StatusPill>
+                        <select
+                          value={u.role}
+                          disabled={isSelf || isBusy}
+                          onChange={(e) => handleRoleChange(u._id, e.target.value)}
+                        >
+                          {ROLES.map((r) => (
+                            <option key={r} value={r}>{r}</option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
-                    <td>{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="payments-date">{new Date(u.created_at).toLocaleDateString()}</td>
                     <td>
                       {confirmingId === u._id ? (
                         <span className="confirm-delete">
