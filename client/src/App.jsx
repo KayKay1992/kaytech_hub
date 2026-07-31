@@ -49,6 +49,7 @@ import AdminApprovals from './pages/admin/academy/Approvals';
 import AdminRegistrations from './pages/admin/academy/Registrations';
 import AdminCohortEnrollments from './pages/admin/academy/CohortEnrollments';
 import AdminCohortAttendance from './pages/admin/academy/CohortAttendance';
+import AdminPayments from './pages/admin/academy/Payments';
 import InstructorCourses from './pages/instructor/academy/Courses';
 import InstructorCourseContent from './pages/instructor/academy/CourseContent';
 import InstructorAssignments from './pages/instructor/academy/Assignments';
@@ -126,6 +127,7 @@ function App() {
           <Route path="academy/cohorts/:id/attendance" element={<AdminCohortAttendance />} />
           <Route path="academy/approvals" element={<AdminApprovals />} />
           <Route path="academy/registrations" element={<AdminRegistrations />} />
+          <Route path="academy/payments" element={<AdminPayments />} />
         </Route>
       </Route>
     </Routes>

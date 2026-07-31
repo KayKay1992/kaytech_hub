@@ -5,11 +5,12 @@ const Enrollment = require('../models/Enrollment');
 const Module = require('../models/Module');
 const Lesson = require('../models/Lesson');
 const CourseRegistration = require('../models/CourseRegistration');
+const Payment = require('../models/Payment');
 
 // GET /api/admin/dashboard/stats — aggregated counts across every already-
 // built module, plus the most recent enrollments/registrations for a quick
-// activity feed. Revenue is derived from paid Enrollments (course price at
-// the time of the enrolled cohort) since there's no separate Payment model.
+// activity feed. Revenue is the sum of Payment.amount_paid across every
+// payment (partial payments count for what's actually been collected so far).
 const getStats = async (req, res) => {
   try {
     const [
@@ -34,9 +35,9 @@ const getStats = async (req, res) => {
       CourseRegistration.countDocuments({ status: 'new' }),
     ]);
 
-    const paidEnrollments = await Enrollment.find({ payment_status: 'paid' })
-      .populate({ path: 'cohort_id', select: 'course_id', populate: { path: 'course_id', select: 'price' } });
-    const totalRevenue = paidEnrollments.reduce((sum, e) => sum + (e.cohort_id?.course_id?.price || 0), 0);
+    const [{ totalRevenue } = { totalRevenue: 0 }] = await Payment.aggregate([
+      { $group: { _id: null, totalRevenue: { $sum: '$amount_paid' } } },
+    ]);
 
     const recentEnrollments = await Enrollment.find()
       .sort({ enrolled_at: -1 })

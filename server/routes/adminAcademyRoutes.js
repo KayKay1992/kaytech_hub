@@ -22,6 +22,10 @@ const {
   createEnrollment,
   updateEnrollment,
   getCohortAttendance,
+  listPayments,
+  createPayment,
+  updatePayment,
+  deletePayment,
 } = require('../controllers/adminAcademyController');
 const { protect, authorize } = require('../middleware/auth');
 const { imageUploadMiddleware } = require('../utils/upload');
@@ -58,5 +62,10 @@ router.post('/academy/enrollments', createEnrollment);
 router.patch('/academy/enrollments/:id', updateEnrollment);
 
 router.get('/academy/cohorts/:id/attendance', getCohortAttendance);
+
+router.get('/academy/payments', listPayments);
+router.post('/academy/payments', createPayment);
+router.patch('/academy/payments/:id', updatePayment);
+router.delete('/academy/payments/:id', deletePayment);
 
 module.exports = router;

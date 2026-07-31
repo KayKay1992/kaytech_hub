@@ -5,7 +5,7 @@ import Reveal from '../../../components/common/Reveal';
 import Modal from '../../../components/common/Modal';
 
 const ENROLLMENT_STATUSES = ['active', 'completed', 'dropped'];
-const PAYMENT_OPTIONS = ['pending', 'paid'];
+const PAYMENT_OPTIONS = ['pending', 'partial', 'paid'];
 
 export default function CohortEnrollments() {
   const { id } = useParams();

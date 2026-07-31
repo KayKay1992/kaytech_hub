@@ -1065,6 +1065,49 @@ a:hover { color: var(--color-amber); }
 }
 .admin-table__actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .job-form { max-width: 560px; }
+
+/* Payments (admin) */
+.payments-stat-grid { margin-bottom: 28px; }
+.payments-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.payments-toolbar .notification-tabs { margin-bottom: 0; }
+.payments-search { margin-bottom: 0; flex-wrap: nowrap; }
+.payments-search input { min-width: 260px; }
+.payments-muted { color: var(--color-text-muted); font-size: 0.82rem; }
+.payments-muted--paid { color: var(--color-teal); font-weight: 600; }
+.payments-amount { font-family: var(--font-heading); font-weight: 600; }
+.payments-amount-cell { white-space: normal; min-width: 170px; vertical-align: top; padding-top: 14px; }
+.payments-balance-track {
+  width: 100%;
+  max-width: 140px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  overflow: hidden;
+  margin: 6px 0 4px;
+}
+.payments-balance-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--color-amber), var(--color-teal));
+}
+.payments-note {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: help;
+}
+.payments-date { white-space: nowrap; }
+.payments-empty { padding: 32px 20px; text-align: center; color: var(--color-text-muted); }
+.stat-card--accent { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 6%, var(--color-surface)); }
+
 .job-applications__note {
   white-space: normal;
   max-width: 260px;
@@ -1251,6 +1294,7 @@ a:hover { color: var(--color-amber); }
 .academy-status--approved { background: color-mix(in srgb, var(--color-teal) 20%, transparent); color: var(--color-navy); }
 .academy-status--rejected { background: color-mix(in srgb, var(--color-danger) 12%, transparent); color: var(--color-danger); }
 .academy-status--neutral { background: color-mix(in srgb, var(--color-slate) 15%, transparent); color: var(--color-slate); }
+.academy-status--partial { background: linear-gradient(90deg, color-mix(in srgb, var(--color-amber) 18%, transparent) 50%, color-mix(in srgb, var(--color-teal) 20%, transparent) 50%); color: var(--color-navy); }
 
 .academy-module {
   background: var(--color-surface);

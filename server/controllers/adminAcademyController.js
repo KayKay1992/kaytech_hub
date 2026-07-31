@@ -6,14 +6,32 @@ const User = require('../models/User');
 const CourseRegistration = require('../models/CourseRegistration');
 const Enrollment = require('../models/Enrollment');
 const Attendance = require('../models/Attendance');
+const Payment = require('../models/Payment');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
 
 const COURSE_STATUSES = ['draft', 'published', 'archived'];
 const COHORT_STATUSES = ['upcoming', 'active', 'completed'];
 const REVIEW_ACTIONS = ['approve', 'reject'];
 const REGISTRATION_STATUSES = ['new', 'contacted', 'confirmed', 'declined', 'converted'];
-const PAYMENT_STATUSES = ['pending', 'paid'];
+const PAYMENT_STATUSES = ['pending', 'partial', 'paid'];
+const PAYMENT_METHODS = ['bank_transfer', 'cash', 'other'];
 const ENROLLMENT_STATUSES = ['active', 'completed', 'dropped'];
+
+// Creates the Payment ledger record that tracks an Enrollment's tuition —
+// amount defaults to the cohort's course price. Used by both createEnrollment
+// and convertRegistration, the two places an Enrollment gets created.
+const createPaymentForEnrollment = async (enrollment) => {
+  const cohort = await Cohort.findById(enrollment.cohort_id).populate('course_id', 'price');
+  const amount = cohort?.course_id?.price || 0;
+  await Payment.create({
+    student_id: enrollment.student_id,
+    cohort_id: enrollment.cohort_id,
+    amount,
+    amount_paid: enrollment.payment_status === 'paid' ? amount : 0,
+    status: enrollment.payment_status,
+    paid_at: enrollment.payment_status === 'paid' ? new Date() : null,
+  });
+};
 
 // Nests lessons under their module — shared by the admin and instructor
 // "course content" tree views.
@@ -442,6 +460,7 @@ const convertRegistration = async (req, res) => {
       cohort_id,
       payment_status: registration.payment_status,
     });
+    await createPaymentForEnrollment(enrollment);
 
     registration.status = 'converted';
     await registration.save();
@@ -454,12 +473,13 @@ const convertRegistration = async (req, res) => {
 
 // ---------- Enrollments ----------
 
-// GET /api/admin/academy/enrollments?cohort_id=...
+// GET /api/admin/academy/enrollments?cohort_id=...&student_id=...
 const listEnrollments = async (req, res) => {
   try {
-    const { cohort_id } = req.query;
+    const { cohort_id, student_id } = req.query;
     const filter = {};
     if (cohort_id) filter.cohort_id = cohort_id;
+    if (student_id) filter.student_id = student_id;
 
     const enrollments = await Enrollment.find(filter)
       .populate('student_id', 'name email')
@@ -507,6 +527,7 @@ const createEnrollment = async (req, res) => {
       cohort_id,
       payment_status: payment_status || 'pending',
     });
+    await createPaymentForEnrollment(enrollment);
 
     res.status(201).json({ enrollment });
   } catch (err) {
@@ -560,6 +581,183 @@ const getCohortAttendance = async (req, res) => {
   }
 };
 
+// ---------- Payments (offline, admin-managed) ----------
+
+// GET /api/admin/academy/payments?status=pending&cohort_id=...
+const listPayments = async (req, res) => {
+  try {
+    const { status, cohort_id } = req.query;
+    const filter = {};
+    if (status) filter.status = status;
+    if (cohort_id) filter.cohort_id = cohort_id;
+
+    const payments = await Payment.find(filter)
+      .populate('student_id', 'name email')
+      .populate({
+        path: 'cohort_id',
+        select: 'name course_id',
+        populate: { path: 'course_id', select: 'title' },
+      })
+      .sort({ created_at: -1 });
+
+    res.json({ payments });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load payments', error: err.message });
+  }
+};
+
+// Keeps Enrollment.payment_status mirrored to a Payment's status, since
+// dashboard revenue and the Enrollments table both read from that field.
+const syncEnrollmentPaymentStatus = async (payment) => {
+  await Enrollment.updateOne(
+    { student_id: payment.student_id, cohort_id: payment.cohort_id },
+    { payment_status: payment.status },
+  );
+};
+
+// Applies the status-dependent rules for amount_paid/payment_method/paid_at
+// onto a not-yet-saved Payment doc (new or existing). Returns an error
+// message string if the combination is invalid, otherwise null.
+// - pending: nothing collected yet — amount_paid resets to 0, no method needed.
+// - partial: some money in — amount_paid required, must be less than the total.
+// - paid: paid in full — amount_paid is forced to the total (can't be
+//   partially "paid", that's what the partial status is for).
+const applyPaymentStatusRules = (payment, { status, amount_paid, payment_method }) => {
+  const resolvedStatus = status !== undefined ? status : payment.status;
+
+  if (resolvedStatus !== 'pending' && !payment_method && !payment.payment_method) {
+    return 'payment_method is required once any money has been received';
+  }
+  if (payment_method !== undefined) payment.payment_method = payment_method;
+
+  if (resolvedStatus === 'pending') {
+    payment.amount_paid = 0;
+    payment.paid_at = null;
+  } else if (resolvedStatus === 'partial') {
+    const resolvedAmountPaid = amount_paid !== undefined && amount_paid !== '' ? Number(amount_paid) : payment.amount_paid;
+    if (!(resolvedAmountPaid > 0) || resolvedAmountPaid >= payment.amount) {
+      return 'amount_paid must be greater than 0 and less than the total amount for a part payment — use "Completed Payment" if the full amount has been received';
+    }
+    payment.amount_paid = resolvedAmountPaid;
+    payment.paid_at = new Date();
+  } else if (resolvedStatus === 'paid') {
+    payment.amount_paid = payment.amount;
+    payment.paid_at = new Date();
+  }
+
+  payment.status = resolvedStatus;
+  return null;
+};
+
+// POST /api/admin/academy/payments — manually record a payment for an
+// existing enrollment (e.g. one created before this feature shipped, or a
+// second/adjustment entry). { student_id, cohort_id, amount, status?, amount_paid?, payment_method?, reference_note? }
+const createPayment = async (req, res) => {
+  try {
+    const { student_id, cohort_id, amount, status, amount_paid, payment_method, reference_note } = req.body;
+    if (!student_id || !cohort_id || amount === undefined || amount === '') {
+      return res.status(400).json({ message: 'student_id, cohort_id, and amount are required' });
+    }
+    if (status && !PAYMENT_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `status must be one of: ${PAYMENT_STATUSES.join(', ')}` });
+    }
+    if (payment_method && !PAYMENT_METHODS.includes(payment_method)) {
+      return res.status(400).json({ message: `payment_method must be one of: ${PAYMENT_METHODS.join(', ')}` });
+    }
+
+    const student = await User.findOne({ _id: student_id, role: 'student' });
+    if (!student) {
+      return res.status(400).json({ message: 'student_id must reference a user with role "student"' });
+    }
+    const cohort = await Cohort.findById(cohort_id);
+    if (!cohort) {
+      return res.status(404).json({ message: 'Cohort not found' });
+    }
+    const enrollment = await Enrollment.findOne({ student_id, cohort_id });
+    if (!enrollment) {
+      return res.status(400).json({ message: 'This student is not enrolled in that cohort yet — enroll them first' });
+    }
+    const existing = await Payment.findOne({ student_id, cohort_id });
+    if (existing) {
+      return res.status(400).json({ message: 'A payment record already exists for this student/cohort — edit it instead' });
+    }
+
+    const payment = new Payment({
+      student_id,
+      cohort_id,
+      amount: Number(amount),
+      reference_note: reference_note || '',
+    });
+    const ruleError = applyPaymentStatusRules(payment, { status: status || 'pending', amount_paid, payment_method });
+    if (ruleError) {
+      return res.status(400).json({ message: ruleError });
+    }
+    await payment.save();
+    await syncEnrollmentPaymentStatus(payment);
+
+    const populated = await Payment.findById(payment._id)
+      .populate('student_id', 'name email')
+      .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } });
+
+    res.status(201).json({ payment: populated });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to create payment', error: err.message });
+  }
+};
+
+// PATCH /api/admin/academy/payments/:id — edit amount/method/note, or move
+// between pending/partial/paid. Covers the everyday "record this payment"
+// action as well as later corrections (wrong amount, wrong method, undoing a
+// mistaken status change).
+const updatePayment = async (req, res) => {
+  try {
+    const { amount, status, amount_paid, payment_method, reference_note } = req.body;
+    if (status && !PAYMENT_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `status must be one of: ${PAYMENT_STATUSES.join(', ')}` });
+    }
+    if (payment_method && !PAYMENT_METHODS.includes(payment_method)) {
+      return res.status(400).json({ message: `payment_method must be one of: ${PAYMENT_METHODS.join(', ')}` });
+    }
+
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+
+    if (amount !== undefined && amount !== '') payment.amount = Number(amount);
+    if (reference_note !== undefined) payment.reference_note = reference_note;
+
+    const ruleError = applyPaymentStatusRules(payment, { status, amount_paid, payment_method });
+    if (ruleError) {
+      return res.status(400).json({ message: ruleError });
+    }
+
+    await payment.save();
+    await syncEnrollmentPaymentStatus(payment);
+
+    const populated = await Payment.findById(payment._id)
+      .populate('student_id', 'name email')
+      .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } });
+
+    res.json({ payment: populated });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update payment', error: err.message });
+  }
+};
+
+// DELETE /api/admin/academy/payments/:id
+const deletePayment = async (req, res) => {
+  try {
+    const payment = await Payment.findByIdAndDelete(req.params.id);
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    res.json({ message: 'Payment deleted', id: payment._id });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete payment', error: err.message });
+  }
+};
+
 module.exports = {
   listCourses,
   getCourse,
@@ -583,4 +781,8 @@ module.exports = {
   createEnrollment,
   updateEnrollment,
   getCohortAttendance,
+  listPayments,
+  createPayment,
+  updatePayment,
+  deletePayment,
 };

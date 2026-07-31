@@ -8,7 +8,7 @@ const enrollmentSchema = new mongoose.Schema({
   student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   cohort_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Cohort', required: true },
   status: { type: String, enum: ['active', 'completed', 'dropped'], default: 'active' },
-  payment_status: { type: String, enum: ['pending', 'paid'], default: 'pending' },
+  payment_status: { type: String, enum: ['pending', 'partial', 'paid'], default: 'pending' },
   // Approved lessons the student has checked off — powers the "My Courses"
   // completion progress bar. No separate Assignment/Attendance model exists
   // yet, so this is the only progress signal available today.
