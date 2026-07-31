@@ -26,6 +26,8 @@ const {
   createPayment,
   updatePayment,
   deletePayment,
+  listPayouts,
+  payInstructor,
 } = require('../controllers/adminAcademyController');
 const { protect, authorize } = require('../middleware/auth');
 const { imageUploadMiddleware } = require('../utils/upload');
@@ -67,5 +69,8 @@ router.get('/academy/payments', listPayments);
 router.post('/academy/payments', createPayment);
 router.patch('/academy/payments/:id', updatePayment);
 router.delete('/academy/payments/:id', deletePayment);
+
+router.get('/academy/payouts', listPayouts);
+router.post('/academy/payouts/:id/pay', payInstructor);
 
 module.exports = router;

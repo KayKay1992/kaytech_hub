@@ -28,6 +28,7 @@ const ADMIN_NAV_GROUPS = [
       { to: '/admin/academy/approvals', label: 'Approvals' },
       { to: '/admin/academy/registrations', label: 'Registrations' },
       { to: '/admin/academy/payments', label: 'Payments' },
+      { to: '/admin/academy/payouts', label: 'Payouts' },
     ],
   },
   {

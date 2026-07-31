@@ -4,7 +4,7 @@ import api from '../../../api/axios';
 
 const EMPTY_FORM = {
   course_id: '', instructor_id: '', name: '',
-  start_date: '', end_date: '', rate_per_student: '', status: 'upcoming',
+  start_date: '', end_date: '', instructor_payout_percent: '35', status: 'upcoming',
 };
 
 const toDateInputValue = (date) => (date ? new Date(date).toISOString().slice(0, 10) : '');
@@ -39,7 +39,7 @@ export default function CohortForm() {
             name: cohort.name,
             start_date: toDateInputValue(cohort.start_date),
             end_date: toDateInputValue(cohort.end_date),
-            rate_per_student: cohort.rate_per_student,
+            instructor_payout_percent: cohort.instructor_payout_percent,
             status: cohort.status,
           });
         }
@@ -118,8 +118,9 @@ export default function CohortForm() {
         </label>
 
         <label>
-          Rate per student (₦)
-          <input type="number" name="rate_per_student" min="0" value={form.rate_per_student} onChange={handleChange} required />
+          Instructor payout percent (%)
+          <input type="number" name="instructor_payout_percent" min="0" max="100" value={form.instructor_payout_percent} onChange={handleChange} placeholder="e.g. 35" />
+          <span className="form-hint">Share of each verified student payment paid to the instructor. Defaults to 35% if left blank.</span>
         </label>
 
         <label>

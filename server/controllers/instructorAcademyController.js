@@ -6,7 +6,38 @@ const Assignment = require('../models/Assignment');
 const Submission = require('../models/Submission');
 const Enrollment = require('../models/Enrollment');
 const Attendance = require('../models/Attendance');
+const InstructorPayout = require('../models/InstructorPayout');
 const { uploadFile } = require('../utils/upload');
+
+const DEFAULT_PAYOUT_PERCENT = 35;
+
+// Per-student payment detail for a cohort — what each student owes
+// (total_fee), has paid (amount_paid), and still has outstanding
+// (balance_remaining) — plus a paid/partial/pending count breakdown
+// derived from the same list (one query covers both). Reads straight off
+// Enrollment, which is the single source of truth for these numbers now
+// (kept in sync automatically whenever a Payment installment is verified).
+const getCohortPaymentDetails = async (cohortId) => {
+  const enrollments = await Enrollment.find({ cohort_id: cohortId })
+    .populate('student_id', 'name email')
+    .sort({ payment_status: 1 });
+
+  const breakdown = { paid: 0, partial: 0, pending: 0 };
+  const students = enrollments.map((e) => {
+    breakdown[e.payment_status] = (breakdown[e.payment_status] || 0) + 1;
+    return {
+      student_id: e.student_id?._id,
+      name: e.student_id?.name || 'Unknown student',
+      email: e.student_id?.email || '',
+      amount: e.total_fee,
+      amount_paid: e.amount_paid,
+      balance: e.balance_remaining,
+      status: e.payment_status,
+    };
+  });
+
+  return { breakdown, students };
+};
 
 // An instructor may only create/manage content for a course they're
 // assigned to teach via at least one Cohort.
@@ -17,6 +48,23 @@ const isAssignedToCourse = (instructorId, courseId) =>
 // cohort rather than "any cohort of this course".
 const isAssignedToCohort = (instructorId, cohortId) =>
   Cohort.exists({ _id: cohortId, instructor_id: instructorId });
+
+// Ensures every cohort I teach has an InstructorPayout ledger row, even
+// ones with no accruals yet, so my payouts list shows every cohort at ₦0
+// rather than only ones a payment has touched. Read-only view — this never
+// touches unpaid_amount/paid_amount, which only change via admin actions
+// (a verified student Payment, or admin paying me out).
+const ensurePayoutForCohort = async (cohort) => {
+  const existing = await InstructorPayout.findOne({ cohort_id: cohort._id });
+  if (existing) return existing;
+  return InstructorPayout.create({
+    instructor_id: cohort.instructor_id,
+    cohort_id: cohort._id,
+    unpaid_amount: 0,
+    paid_amount: 0,
+    payout_percent_used: cohort.instructor_payout_percent ?? DEFAULT_PAYOUT_PERCENT,
+  });
+};
 
 // Parses the `resource_links` JSON string (link-type resources) and combines
 // it with any uploaded `resource_files` (file-type resources, labeled by
@@ -514,6 +562,31 @@ const getAttendanceHistory = async (req, res) => {
   }
 };
 
+// GET /api/instructor/payouts — view-only, one row per cohort I teach, each
+// including a paid/partial/pending count breakdown and the full per-student
+// payment detail (amount owed, amount paid, balance remaining).
+const listMyPayouts = async (req, res) => {
+  try {
+    const cohorts = await Cohort.find({ instructor_id: req.user._id });
+    await Promise.all(cohorts.map(ensurePayoutForCohort));
+
+    const payouts = await InstructorPayout.find({ instructor_id: req.user._id })
+      .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } })
+      .sort({ created_at: -1 });
+
+    const withDetails = await Promise.all(payouts.map(async (payout) => {
+      const cohortId = payout.cohort_id._id;
+      const { breakdown, students } = await getCohortPaymentDetails(cohortId);
+      const students_count = await Enrollment.countDocuments({ cohort_id: cohortId, status: 'active' });
+      return { ...payout.toObject(), students_count, payment_breakdown: breakdown, student_payments: students };
+    }));
+
+    res.json({ payouts: withDetails });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load your payouts', error: err.message });
+  }
+};
+
 module.exports = {
   listMyCourses,
   getCourseContent,
@@ -533,4 +606,5 @@ module.exports = {
   getAttendanceRoster,
   saveAttendance,
   getAttendanceHistory,
+  listMyPayouts,
 };

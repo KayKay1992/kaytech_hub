@@ -32,8 +32,11 @@ Public signup does NOT let someone choose their own role. Instead:
 ## User Management — already built (pulled forward from Site-Wide module)
 Admin can already: view all users (filter/search by role), change any user's role directly (no invite code needed — e.g. promote member → instructor, instructor → admin, demote instructor → member), delete any user (with confirmation), and delete/revoke any invite code. Don't rebuild this when reaching the Site-Wide Admin module later — just extend it if needed.
 
-## Instructor payouts — calculated automatically, paid manually
-`InstructorPayout.total_amount` is always `students_count × rate_per_student`, computed by the system — never entered manually. The actual payout still happens offline; admin just marks it `paid` once they've sent the money.
+## Instructor payouts — percentage-of-payment accrual, not flat rate
+Each cohort has an `instructor_payout_percent` (default 35%, admin-adjustable) instead of a flat `rate_per_student`. Students can pay in installments — each Enrollment tracks `total_fee`, `amount_paid`, and `balance_remaining`. Every time admin marks an individual Payment (installment) as paid, the system automatically adds `payment.amount × instructor_payout_percent/100` onto that instructor's `InstructorPayout.unpaid_amount` for that cohort — this is a running ledger, not a one-time calculation.
+`InstructorPayout` has two separate running totals: `unpaid_amount` (owed, grows with each verified installment) and `paid_amount` (already paid out). When admin clicks "Mark as Paid," the current `unpaid_amount` moves onto `paid_amount` and `unpaid_amount` resets to 0 — new installments after that start accruing fresh, never touching the existing `paid_amount`.
+The Admin Payout page also shows a **Projected Additional Payout** per cohort (`balance_remaining × instructor_payout_percent/100`, summed across that cohort's enrollments) — this is informational only (money not yet collected), kept visually distinct from the real `unpaid_amount` ledger.
+The actual payout still happens offline — admin just clicks "Mark as Paid" once they've sent the money.
 
 ## Design System — already established, reuse it everywhere
 Colors: Ink Navy `#10142B` (dark backgrounds), Cloud `#F5F6FA` (page background), Signal Amber `#FFB020` (primary buttons/accents), Circuit Teal `#2DD4BF` (AI-related tags/badges only), Slate `#5B6072` (muted text).

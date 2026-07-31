@@ -68,7 +68,7 @@ export default function AdminCohorts() {
                 <th>Course</th>
                 <th>Instructor</th>
                 <th>Dates</th>
-                <th>Rate/Student</th>
+                <th>Payout %</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -80,7 +80,7 @@ export default function AdminCohorts() {
                   <td>{cohort.course_id?.title || '—'}</td>
                   <td>{cohort.instructor_id?.name || '—'}</td>
                   <td>{new Date(cohort.start_date).toLocaleDateString()} – {new Date(cohort.end_date).toLocaleDateString()}</td>
-                  <td>₦{Number(cohort.rate_per_student).toLocaleString()}</td>
+                  <td>{cohort.instructor_payout_percent}%</td>
                   <td><span className={`invite-status ${STATUS_CLASSES[cohort.status] || ''}`}>{cohort.status}</span></td>
                   <td className="admin-table__actions">
                     <Link to={`/admin/academy/cohorts/${cohort._id}/edit`} className="btn btn--ghost">Edit</Link>

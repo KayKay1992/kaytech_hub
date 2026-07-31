@@ -31,10 +31,13 @@ const cohortSchema = new mongoose.Schema({
     enum: ['upcoming', 'active', 'completed'],
     default: 'upcoming',
   },
-  rate_per_student: {
+  // Share of each verified student payment that goes to the instructor —
+  // applied per-payment as it's marked paid, not a flat per-head rate.
+  instructor_payout_percent: {
     type: Number,
-    required: true,
+    default: 35,
     min: 0,
+    max: 100,
   },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },

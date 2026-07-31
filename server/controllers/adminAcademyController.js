@@ -7,30 +7,121 @@ const CourseRegistration = require('../models/CourseRegistration');
 const Enrollment = require('../models/Enrollment');
 const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
+const InstructorPayout = require('../models/InstructorPayout');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
 
 const COURSE_STATUSES = ['draft', 'published', 'archived'];
 const COHORT_STATUSES = ['upcoming', 'active', 'completed'];
 const REVIEW_ACTIONS = ['approve', 'reject'];
 const REGISTRATION_STATUSES = ['new', 'contacted', 'confirmed', 'declined', 'converted'];
-const PAYMENT_STATUSES = ['pending', 'partial', 'paid'];
+const PAYMENT_STATUSES = ['pending', 'paid'];
 const PAYMENT_METHODS = ['bank_transfer', 'cash', 'other'];
 const ENROLLMENT_STATUSES = ['active', 'completed', 'dropped'];
+const DEFAULT_PAYOUT_PERCENT = 35;
 
-// Creates the Payment ledger record that tracks an Enrollment's tuition —
-// amount defaults to the cohort's course price. Used by both createEnrollment
-// and convertRegistration, the two places an Enrollment gets created.
-const createPaymentForEnrollment = async (enrollment) => {
+// Snapshots the cohort's course price onto a freshly-created Enrollment as
+// total_fee, and zeroes out the running amount_paid/balance_remaining
+// ledger. Used by both createEnrollment and convertRegistration, the two
+// places an Enrollment gets created. If the caller declared the enrollment
+// already fully paid (e.g. cash collected before this system was used),
+// records that as one verified installment so it flows through the exact
+// same ledger/payout logic as any other payment — never a special case.
+const initializeEnrollmentFee = async (enrollment, { alreadyPaid = false } = {}) => {
   const cohort = await Cohort.findById(enrollment.cohort_id).populate('course_id', 'price');
-  const amount = cohort?.course_id?.price || 0;
-  await Payment.create({
-    student_id: enrollment.student_id,
-    cohort_id: enrollment.cohort_id,
-    amount,
-    amount_paid: enrollment.payment_status === 'paid' ? amount : 0,
-    status: enrollment.payment_status,
-    paid_at: enrollment.payment_status === 'paid' ? new Date() : null,
+  const total_fee = cohort?.course_id?.price || 0;
+
+  enrollment.total_fee = total_fee;
+  enrollment.amount_paid = 0;
+  enrollment.balance_remaining = total_fee;
+  enrollment.payment_status = 'pending';
+  await enrollment.save();
+
+  if (alreadyPaid && total_fee > 0 && cohort) {
+    const payment = await Payment.create({
+      enrollment_id: enrollment._id,
+      student_id: enrollment.student_id,
+      cohort_id: enrollment.cohort_id,
+      amount: total_fee,
+      status: 'paid',
+      payment_method: 'other',
+      reference_note: 'Recorded as already paid at enrollment',
+      paid_at: new Date(),
+    });
+    await applyVerifiedPaymentToEnrollment(payment, enrollment);
+    await recordPayoutAccrual(payment);
+  }
+};
+
+// Adds a verified installment's amount onto its enrollment's running
+// amount_paid, recalculates balance_remaining, and re-derives
+// payment_status from the two — this is the only thing that ever moves
+// those numbers, so they can't drift out of sync with actual Payment
+// records.
+const applyVerifiedPaymentToEnrollment = async (payment, preloadedEnrollment) => {
+  const enrollment = preloadedEnrollment || await Enrollment.findById(payment.enrollment_id);
+  if (!enrollment) return;
+
+  enrollment.amount_paid = (enrollment.amount_paid || 0) + payment.amount;
+  enrollment.balance_remaining = Math.max(0, (enrollment.total_fee || 0) - enrollment.amount_paid);
+  enrollment.payment_status = enrollment.balance_remaining <= 0 && enrollment.amount_paid > 0
+    ? 'paid'
+    : (enrollment.amount_paid > 0 ? 'partial' : 'pending');
+
+  await enrollment.save();
+};
+
+// Ensures every cohort has an InstructorPayout ledger row, even ones with
+// no accruals yet, so admin/instructor views can list all cohorts at ₦0
+// rather than only ones a payment has touched. Never recomputes existing
+// unpaid_amount/paid_amount — those only change via recordPayoutAccrual and
+// payInstructor.
+const ensurePayoutForCohort = async (cohort) => {
+  const existing = await InstructorPayout.findOne({ cohort_id: cohort._id });
+  if (existing) {
+    // Keep instructor_id in sync in case the cohort's instructor changed.
+    if (String(existing.instructor_id) !== String(cohort.instructor_id)) {
+      existing.instructor_id = cohort.instructor_id;
+      await existing.save();
+    }
+    return existing;
+  }
+  return InstructorPayout.create({
+    instructor_id: cohort.instructor_id,
+    cohort_id: cohort._id,
+    unpaid_amount: 0,
+    paid_amount: 0,
+    payout_percent_used: cohort.instructor_payout_percent ?? DEFAULT_PAYOUT_PERCENT,
   });
+};
+
+// The core event hook: called whenever a student Payment transitions into
+// "paid". Adds payment.amount x cohort.instructor_payout_percent onto that
+// instructor+cohort's unpaid_amount and logs an accrual transaction — never
+// touches paid_amount. Safe to call multiple times only because callers
+// guard it to fire on the pending/partial -> paid transition, not on every
+// save of an already-paid record.
+const recordPayoutAccrual = async (payment) => {
+  const cohort = await Cohort.findById(payment.cohort_id);
+  if (!cohort) {
+    console.error(`recordPayoutAccrual: no cohort found for payment ${payment._id} (cohort_id=${payment.cohort_id}) — payout ledger NOT updated`);
+    return;
+  }
+
+  const percent = cohort.instructor_payout_percent ?? DEFAULT_PAYOUT_PERCENT;
+  const payoutAmount = Math.round(payment.amount * (percent / 100));
+
+  const payout = await ensurePayoutForCohort(cohort);
+  payout.unpaid_amount += payoutAmount;
+  payout.payout_percent_used = percent;
+  payout.transactions.push({
+    type: 'accrual',
+    amount: payoutAmount,
+    percent_used: percent,
+    payment_id: payment._id,
+    student_id: payment.student_id,
+    created_at: new Date(),
+  });
+  await payout.save();
 };
 
 // Nests lessons under their module — shared by the admin and instructor
@@ -193,15 +284,18 @@ const getCohort = async (req, res) => {
 // POST /api/admin/academy/cohorts
 const createCohort = async (req, res) => {
   try {
-    const { course_id, instructor_id, name, start_date, end_date, rate_per_student, status } = req.body;
-    if (!course_id || !instructor_id || !name || !start_date || !end_date || rate_per_student === undefined || rate_per_student === '') {
-      return res.status(400).json({ message: 'course_id, instructor_id, name, start_date, end_date, and rate_per_student are required' });
+    const { course_id, instructor_id, name, start_date, end_date, instructor_payout_percent, status } = req.body;
+    if (!course_id || !instructor_id || !name || !start_date || !end_date) {
+      return res.status(400).json({ message: 'course_id, instructor_id, name, start_date, and end_date are required' });
     }
     if (new Date(start_date) >= new Date(end_date)) {
       return res.status(400).json({ message: 'Start date must be before end date' });
     }
     if (status && !COHORT_STATUSES.includes(status)) {
       return res.status(400).json({ message: `Status must be one of: ${COHORT_STATUSES.join(', ')}` });
+    }
+    if (instructor_payout_percent !== undefined && instructor_payout_percent !== '' && (Number(instructor_payout_percent) < 0 || Number(instructor_payout_percent) > 100)) {
+      return res.status(400).json({ message: 'instructor_payout_percent must be between 0 and 100' });
     }
 
     const course = await Course.findById(course_id);
@@ -220,7 +314,7 @@ const createCohort = async (req, res) => {
       name,
       start_date,
       end_date,
-      rate_per_student: Number(rate_per_student),
+      ...(instructor_payout_percent !== undefined && instructor_payout_percent !== '' ? { instructor_payout_percent: Number(instructor_payout_percent) } : {}),
       status: status || 'upcoming',
     });
 
@@ -233,9 +327,12 @@ const createCohort = async (req, res) => {
 // PATCH /api/admin/academy/cohorts/:id
 const updateCohort = async (req, res) => {
   try {
-    const { instructor_id, name, start_date, end_date, rate_per_student, status } = req.body;
+    const { instructor_id, name, start_date, end_date, instructor_payout_percent, status } = req.body;
     if (status && !COHORT_STATUSES.includes(status)) {
       return res.status(400).json({ message: `Status must be one of: ${COHORT_STATUSES.join(', ')}` });
+    }
+    if (instructor_payout_percent !== undefined && instructor_payout_percent !== '' && (Number(instructor_payout_percent) < 0 || Number(instructor_payout_percent) > 100)) {
+      return res.status(400).json({ message: 'instructor_payout_percent must be between 0 and 100' });
     }
 
     const cohort = await Cohort.findById(req.params.id);
@@ -253,7 +350,7 @@ const updateCohort = async (req, res) => {
     if (name !== undefined) cohort.name = name;
     if (start_date !== undefined) cohort.start_date = start_date;
     if (end_date !== undefined) cohort.end_date = end_date;
-    if (rate_per_student !== undefined) cohort.rate_per_student = Number(rate_per_student);
+    if (instructor_payout_percent !== undefined && instructor_payout_percent !== '') cohort.instructor_payout_percent = Number(instructor_payout_percent);
     if (status !== undefined) cohort.status = status;
 
     if (new Date(cohort.start_date) >= new Date(cohort.end_date)) {
@@ -458,9 +555,8 @@ const convertRegistration = async (req, res) => {
     const enrollment = await Enrollment.create({
       student_id: student._id,
       cohort_id,
-      payment_status: registration.payment_status,
     });
-    await createPaymentForEnrollment(enrollment);
+    await initializeEnrollmentFee(enrollment, { alreadyPaid: registration.payment_status === 'paid' });
 
     registration.status = 'converted';
     await registration.save();
@@ -490,7 +586,21 @@ const listEnrollments = async (req, res) => {
       })
       .sort({ enrolled_at: -1 });
 
-    res.json({ enrollments });
+    // Attach each enrollment's individual installment payments (its full
+    // fee/paid/balance history), newest first, for the admin payments ledger.
+    const payments = await Payment.find({ enrollment_id: { $in: enrollments.map((e) => e._id) } }).sort({ created_at: -1 });
+    const paymentsByEnrollmentId = new Map();
+    payments.forEach((p) => {
+      const key = String(p.enrollment_id);
+      if (!paymentsByEnrollmentId.has(key)) paymentsByEnrollmentId.set(key, []);
+      paymentsByEnrollmentId.get(key).push(p);
+    });
+    const withPayments = enrollments.map((e) => ({
+      ...e.toObject(),
+      payments: paymentsByEnrollmentId.get(String(e._id)) || [],
+    }));
+
+    res.json({ enrollments: withPayments });
   } catch (err) {
     res.status(500).json({ message: 'Failed to load enrollments', error: err.message });
   }
@@ -525,9 +635,8 @@ const createEnrollment = async (req, res) => {
     const enrollment = await Enrollment.create({
       student_id,
       cohort_id,
-      payment_status: payment_status || 'pending',
     });
-    await createPaymentForEnrollment(enrollment);
+    await initializeEnrollmentFee(enrollment, { alreadyPaid: payment_status === 'paid' });
 
     res.status(201).json({ enrollment });
   } catch (err) {
@@ -535,15 +644,15 @@ const createEnrollment = async (req, res) => {
   }
 };
 
-// PATCH /api/admin/academy/enrollments/:id — update status and/or payment_status
+// PATCH /api/admin/academy/enrollments/:id — update status (active/completed/
+// dropped) only. payment_status is derived from amount_paid/total_fee and
+// can only change by recording Payment installments — never set directly,
+// so it can't drift out of sync with the actual ledger.
 const updateEnrollment = async (req, res) => {
   try {
-    const { status, payment_status } = req.body;
+    const { status } = req.body;
     if (status && !ENROLLMENT_STATUSES.includes(status)) {
       return res.status(400).json({ message: `Status must be one of: ${ENROLLMENT_STATUSES.join(', ')}` });
-    }
-    if (payment_status && !PAYMENT_STATUSES.includes(payment_status)) {
-      return res.status(400).json({ message: `Payment status must be one of: ${PAYMENT_STATUSES.join(', ')}` });
     }
 
     const enrollment = await Enrollment.findById(req.params.id);
@@ -552,7 +661,6 @@ const updateEnrollment = async (req, res) => {
     }
 
     if (status !== undefined) enrollment.status = status;
-    if (payment_status !== undefined) enrollment.payment_status = payment_status;
 
     await enrollment.save();
     res.json({ enrollment });
@@ -586,10 +694,12 @@ const getCohortAttendance = async (req, res) => {
 // GET /api/admin/academy/payments?status=pending&cohort_id=...
 const listPayments = async (req, res) => {
   try {
-    const { status, cohort_id } = req.query;
+    const { status, cohort_id, student_id, enrollment_id } = req.query;
     const filter = {};
     if (status) filter.status = status;
     if (cohort_id) filter.cohort_id = cohort_id;
+    if (student_id) filter.student_id = student_id;
+    if (enrollment_id) filter.enrollment_id = enrollment_id;
 
     const payments = await Payment.find(filter)
       .populate('student_id', 'name email')
@@ -606,57 +716,37 @@ const listPayments = async (req, res) => {
   }
 };
 
-// Keeps Enrollment.payment_status mirrored to a Payment's status, since
-// dashboard revenue and the Enrollments table both read from that field.
-const syncEnrollmentPaymentStatus = async (payment) => {
-  await Enrollment.updateOne(
-    { student_id: payment.student_id, cohort_id: payment.cohort_id },
-    { payment_status: payment.status },
-  );
-};
-
-// Applies the status-dependent rules for amount_paid/payment_method/paid_at
-// onto a not-yet-saved Payment doc (new or existing). Returns an error
-// message string if the combination is invalid, otherwise null.
-// - pending: nothing collected yet — amount_paid resets to 0, no method needed.
-// - partial: some money in — amount_paid required, must be less than the total.
-// - paid: paid in full — amount_paid is forced to the total (can't be
-//   partially "paid", that's what the partial status is for).
-const applyPaymentStatusRules = (payment, { status, amount_paid, payment_method }) => {
+// Applies status-dependent rules for payment_method/paid_at onto a
+// not-yet-saved Payment installment (new or existing). Returns an error
+// message string if invalid, otherwise null. An installment is a single
+// discrete amount — either not yet collected ("pending") or fully collected
+// and verified ("paid"); there's no partial state on one installment
+// anymore, a part-payment is just its own smaller installment.
+const applyPaymentStatusRules = (payment, { status, payment_method }) => {
   const resolvedStatus = status !== undefined ? status : payment.status;
 
-  if (resolvedStatus !== 'pending' && !payment_method && !payment.payment_method) {
-    return 'payment_method is required once any money has been received';
+  if (resolvedStatus === 'paid' && !payment_method && !payment.payment_method) {
+    return 'payment_method is required when marking an installment as paid';
   }
   if (payment_method !== undefined) payment.payment_method = payment_method;
 
-  if (resolvedStatus === 'pending') {
-    payment.amount_paid = 0;
-    payment.paid_at = null;
-  } else if (resolvedStatus === 'partial') {
-    const resolvedAmountPaid = amount_paid !== undefined && amount_paid !== '' ? Number(amount_paid) : payment.amount_paid;
-    if (!(resolvedAmountPaid > 0) || resolvedAmountPaid >= payment.amount) {
-      return 'amount_paid must be greater than 0 and less than the total amount for a part payment — use "Completed Payment" if the full amount has been received';
-    }
-    payment.amount_paid = resolvedAmountPaid;
-    payment.paid_at = new Date();
-  } else if (resolvedStatus === 'paid') {
-    payment.amount_paid = payment.amount;
-    payment.paid_at = new Date();
-  }
-
+  payment.paid_at = resolvedStatus === 'paid' ? (payment.paid_at || new Date()) : null;
   payment.status = resolvedStatus;
   return null;
 };
 
-// POST /api/admin/academy/payments — manually record a payment for an
-// existing enrollment (e.g. one created before this feature shipped, or a
-// second/adjustment entry). { student_id, cohort_id, amount, status?, amount_paid?, payment_method?, reference_note? }
+// POST /api/admin/academy/payments — record a new installment against an
+// existing enrollment. Multiple installments per enrollment are expected —
+// a student paying in three parts means three of these records.
+// { student_id, cohort_id, amount, status?, payment_method?, reference_note? }
 const createPayment = async (req, res) => {
   try {
-    const { student_id, cohort_id, amount, status, amount_paid, payment_method, reference_note } = req.body;
+    const { student_id, cohort_id, amount, status, payment_method, reference_note } = req.body;
     if (!student_id || !cohort_id || amount === undefined || amount === '') {
       return res.status(400).json({ message: 'student_id, cohort_id, and amount are required' });
+    }
+    if (!(Number(amount) > 0)) {
+      return res.status(400).json({ message: 'amount must be greater than 0' });
     }
     if (status && !PAYMENT_STATUSES.includes(status)) {
       return res.status(400).json({ message: `status must be one of: ${PAYMENT_STATUSES.join(', ')}` });
@@ -677,23 +767,23 @@ const createPayment = async (req, res) => {
     if (!enrollment) {
       return res.status(400).json({ message: 'This student is not enrolled in that cohort yet — enroll them first' });
     }
-    const existing = await Payment.findOne({ student_id, cohort_id });
-    if (existing) {
-      return res.status(400).json({ message: 'A payment record already exists for this student/cohort — edit it instead' });
-    }
 
     const payment = new Payment({
+      enrollment_id: enrollment._id,
       student_id,
       cohort_id,
       amount: Number(amount),
       reference_note: reference_note || '',
     });
-    const ruleError = applyPaymentStatusRules(payment, { status: status || 'pending', amount_paid, payment_method });
+    const ruleError = applyPaymentStatusRules(payment, { status: status || 'pending', payment_method });
     if (ruleError) {
       return res.status(400).json({ message: ruleError });
     }
     await payment.save();
-    await syncEnrollmentPaymentStatus(payment);
+    if (payment.status === 'paid') {
+      await applyVerifiedPaymentToEnrollment(payment);
+      await recordPayoutAccrual(payment);
+    }
 
     const populated = await Payment.findById(payment._id)
       .populate('student_id', 'name email')
@@ -705,13 +795,14 @@ const createPayment = async (req, res) => {
   }
 };
 
-// PATCH /api/admin/academy/payments/:id — edit amount/method/note, or move
-// between pending/partial/paid. Covers the everyday "record this payment"
-// action as well as later corrections (wrong amount, wrong method, undoing a
-// mistaken status change).
+// PATCH /api/admin/academy/payments/:id — mark an installment paid (or edit
+// its amount/method/note while still pending). Once an installment is paid
+// it's locked — its amount can no longer change, since that would silently
+// desync the enrollment's amount_paid/balance_remaining and the
+// instructor's payout ledger from what was actually verified.
 const updatePayment = async (req, res) => {
   try {
-    const { amount, status, amount_paid, payment_method, reference_note } = req.body;
+    const { amount, status, payment_method, reference_note } = req.body;
     if (status && !PAYMENT_STATUSES.includes(status)) {
       return res.status(400).json({ message: `status must be one of: ${PAYMENT_STATUSES.join(', ')}` });
     }
@@ -723,17 +814,32 @@ const updatePayment = async (req, res) => {
     if (!payment) {
       return res.status(404).json({ message: 'Payment not found' });
     }
+    const wasAlreadyPaid = payment.status === 'paid';
 
-    if (amount !== undefined && amount !== '') payment.amount = Number(amount);
+    if (amount !== undefined && amount !== '' && Number(amount) !== payment.amount) {
+      if (wasAlreadyPaid) {
+        return res.status(400).json({ message: 'This installment has already been verified paid and its amount is locked — delete it and record a new one to correct a mistake' });
+      }
+      if (!(Number(amount) > 0)) {
+        return res.status(400).json({ message: 'amount must be greater than 0' });
+      }
+      payment.amount = Number(amount);
+    }
     if (reference_note !== undefined) payment.reference_note = reference_note;
 
-    const ruleError = applyPaymentStatusRules(payment, { status, amount_paid, payment_method });
+    const ruleError = applyPaymentStatusRules(payment, { status, payment_method });
     if (ruleError) {
       return res.status(400).json({ message: ruleError });
     }
 
     await payment.save();
-    await syncEnrollmentPaymentStatus(payment);
+    // Only verify on the pending -> paid transition — re-saving an
+    // already-paid record (e.g. fixing a typo in the note) must not
+    // double-count it against the enrollment or the payout ledger.
+    if (payment.status === 'paid' && !wasAlreadyPaid) {
+      await applyVerifiedPaymentToEnrollment(payment);
+      await recordPayoutAccrual(payment);
+    }
 
     const populated = await Payment.findById(payment._id)
       .populate('student_id', 'name email')
@@ -748,13 +854,100 @@ const updatePayment = async (req, res) => {
 // DELETE /api/admin/academy/payments/:id
 const deletePayment = async (req, res) => {
   try {
-    const payment = await Payment.findByIdAndDelete(req.params.id);
+    const payment = await Payment.findById(req.params.id);
     if (!payment) {
       return res.status(404).json({ message: 'Payment not found' });
     }
+    if (payment.status === 'paid') {
+      return res.status(400).json({ message: 'This installment has already been verified paid — it has already fed into the enrollment balance and the instructor payout ledger, so it can\'t be deleted' });
+    }
+    await payment.deleteOne();
     res.json({ message: 'Payment deleted', id: payment._id });
   } catch (err) {
     res.status(500).json({ message: 'Failed to delete payment', error: err.message });
+  }
+};
+
+// ---------- Instructor Payouts (event-driven ledger, paid offline) ----------
+
+// GET /api/admin/academy/payouts?cohort_id=... — one row per cohort,
+// including cohorts with no accruals yet (unpaid_amount/paid_amount at 0),
+// so admin sees the full picture, not just cohorts a payment has touched.
+const listPayouts = async (req, res) => {
+  try {
+    const { cohort_id } = req.query;
+    const cohorts = await Cohort.find(cohort_id ? { _id: cohort_id } : {});
+    await Promise.all(cohorts.map(ensurePayoutForCohort));
+
+    const filter = {};
+    if (cohort_id) filter.cohort_id = cohort_id;
+
+    const payouts = await InstructorPayout.find(filter)
+      .populate('instructor_id', 'name email')
+      .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } })
+      .populate('transactions.student_id', 'name')
+      .sort({ created_at: -1 });
+
+    // Outstanding balances (money not yet collected) per cohort, for the
+    // "Projected Additional Payout" figure — informational only, never
+    // added to the real unpaid_amount ledger since it hasn't been paid yet.
+    const balanceRows = await Enrollment.aggregate([
+      { $match: { cohort_id: { $in: cohorts.map((c) => c._id) } } },
+      { $group: { _id: '$cohort_id', total_balance: { $sum: '$balance_remaining' } } },
+    ]);
+    const balanceByCohortId = new Map(balanceRows.map((r) => [String(r._id), r.total_balance]));
+    const percentByCohortId = new Map(cohorts.map((c) => [String(c._id), c.instructor_payout_percent ?? DEFAULT_PAYOUT_PERCENT]));
+
+    // students_count is purely informational context — it never drives the
+    // payout math, which lives entirely in the transaction ledger.
+    const withExtras = await Promise.all(payouts.map(async (payout) => {
+      const cohortIdStr = String(payout.cohort_id?._id || payout.cohort_id);
+      const totalBalance = balanceByCohortId.get(cohortIdStr) || 0;
+      const percent = percentByCohortId.get(cohortIdStr) ?? payout.payout_percent_used;
+      return {
+        ...payout.toObject(),
+        students_count: await Enrollment.countDocuments({ cohort_id: payout.cohort_id?._id || payout.cohort_id, status: 'active' }),
+        projected_additional_payout: Math.round(totalBalance * (percent / 100)),
+      };
+    }));
+
+    res.json({ payouts: withExtras });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load payouts', error: err.message });
+  }
+};
+
+// POST /api/admin/academy/payouts/:id/pay — pays the instructor the CURRENT
+// unpaid_amount: moves it onto paid_amount and resets unpaid_amount to 0,
+// logging a 'payout' transaction. Never touches money already recorded as
+// paid; any new student payments verified after this accrue fresh from 0.
+const payInstructor = async (req, res) => {
+  try {
+    const payout = await InstructorPayout.findById(req.params.id);
+    if (!payout) {
+      return res.status(404).json({ message: 'Payout not found' });
+    }
+    if (payout.unpaid_amount <= 0) {
+      return res.status(400).json({ message: 'Nothing is currently owed to this instructor for this cohort' });
+    }
+
+    const paidAt = new Date();
+    const amountPaidOut = payout.unpaid_amount;
+    payout.paid_amount += amountPaidOut;
+    payout.unpaid_amount = 0;
+    payout.last_paid_at = paidAt;
+    payout.transactions.push({ type: 'payout', amount: amountPaidOut, created_at: paidAt });
+
+    await payout.save();
+
+    const populated = await InstructorPayout.findById(payout._id)
+      .populate('instructor_id', 'name email')
+      .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } })
+      .populate('transactions.student_id', 'name');
+
+    res.json({ payout: populated });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to record payout', error: err.message });
   }
 };
 
@@ -785,4 +978,6 @@ module.exports = {
   createPayment,
   updatePayment,
   deletePayment,
+  listPayouts,
+  payInstructor,
 };

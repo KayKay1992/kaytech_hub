@@ -9,8 +9,8 @@ const Payment = require('../models/Payment');
 
 // GET /api/admin/dashboard/stats — aggregated counts across every already-
 // built module, plus the most recent enrollments/registrations for a quick
-// activity feed. Revenue is the sum of Payment.amount_paid across every
-// payment (partial payments count for what's actually been collected so far).
+// activity feed. Revenue is the sum of every verified (status: 'paid')
+// Payment installment — money actually collected, not what's still owed.
 const getStats = async (req, res) => {
   try {
     const [
@@ -36,7 +36,8 @@ const getStats = async (req, res) => {
     ]);
 
     const [{ totalRevenue } = { totalRevenue: 0 }] = await Payment.aggregate([
-      { $group: { _id: null, totalRevenue: { $sum: '$amount_paid' } } },
+      { $match: { status: 'paid' } },
+      { $group: { _id: null, totalRevenue: { $sum: '$amount' } } },
     ]);
 
     const recentEnrollments = await Enrollment.find()

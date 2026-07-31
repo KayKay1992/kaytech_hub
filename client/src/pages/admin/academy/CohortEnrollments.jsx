@@ -3,9 +3,11 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../../../api/axios';
 import Reveal from '../../../components/common/Reveal';
 import Modal from '../../../components/common/Modal';
+import PaymentStatusBadge from '../../../components/academy/PaymentStatusBadge';
 
 const ENROLLMENT_STATUSES = ['active', 'completed', 'dropped'];
-const PAYMENT_OPTIONS = ['pending', 'partial', 'paid'];
+
+const money = (n) => `₦${Number(n || 0).toLocaleString()}`;
 
 export default function CohortEnrollments() {
   const { id } = useParams();
@@ -18,7 +20,6 @@ export default function CohortEnrollments() {
 
   const [enrolling, setEnrolling] = useState(false);
   const [pickedStudentId, setPickedStudentId] = useState('');
-  const [pickedPaymentStatus, setPickedPaymentStatus] = useState('pending');
   const [enrollError, setEnrollError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -46,12 +47,12 @@ export default function CohortEnrollments() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const updateField = async (enrollmentId, field, value) => {
+  const updateStatus = async (enrollmentId, status) => {
     setBusyId(enrollmentId);
     setError('');
     try {
-      await api.patch(`/admin/academy/enrollments/${enrollmentId}`, { [field]: value });
-      setEnrollments((prev) => prev.map((e) => (e._id === enrollmentId ? { ...e, [field]: value } : e)));
+      await api.patch(`/admin/academy/enrollments/${enrollmentId}`, { status });
+      setEnrollments((prev) => prev.map((e) => (e._id === enrollmentId ? { ...e, status } : e)));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update enrollment');
     } finally {
@@ -71,11 +72,9 @@ export default function CohortEnrollments() {
       await api.post('/admin/academy/enrollments', {
         student_id: pickedStudentId,
         cohort_id: id,
-        payment_status: pickedPaymentStatus,
       });
       setEnrolling(false);
       setPickedStudentId('');
-      setPickedPaymentStatus('pending');
       await load();
     } catch (err) {
       setEnrollError(err.response?.data?.message || 'Failed to enroll student');
@@ -95,6 +94,8 @@ export default function CohortEnrollments() {
             <h1>Enrollments{cohort ? `: ${cohort.name}` : ''}</h1>
             <p className="admin-dashboard__subtitle">
               <Link to="/admin/academy/cohorts">&larr; Back to Cohorts</Link>
+              {' · '}
+              <Link to="/admin/academy/payments">Record installment payments &rarr;</Link>
             </p>
           </div>
           <button type="button" className="btn btn--primary" onClick={() => setEnrolling(true)}>Enroll Student</button>
@@ -114,6 +115,9 @@ export default function CohortEnrollments() {
               <tr>
                 <th>Student</th>
                 <th>Status</th>
+                <th className="is-numeric">Total Fee</th>
+                <th className="is-numeric">Paid</th>
+                <th className="is-numeric">Balance</th>
                 <th>Payment</th>
                 <th>Enrolled</th>
               </tr>
@@ -123,18 +127,17 @@ export default function CohortEnrollments() {
                 const isBusy = busyId === enr._id;
                 return (
                   <tr key={enr._id}>
-                    <td>{enr.student_id?.name || '—'}<br />{enr.student_id?.email}</td>
+                    <td>{enr.student_id?.name || '—'}<br /><span className="payments-muted">{enr.student_id?.email}</span></td>
                     <td>
-                      <select value={enr.status} disabled={isBusy} onChange={(e) => updateField(enr._id, 'status', e.target.value)}>
+                      <select value={enr.status} disabled={isBusy} onChange={(e) => updateStatus(enr._id, e.target.value)}>
                         {ENROLLMENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </td>
-                    <td>
-                      <select value={enr.payment_status} disabled={isBusy} onChange={(e) => updateField(enr._id, 'payment_status', e.target.value)}>
-                        {PAYMENT_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </td>
-                    <td>{new Date(enr.enrolled_at).toLocaleDateString()}</td>
+                    <td className="is-numeric">{money(enr.total_fee)}</td>
+                    <td className="is-numeric">{money(enr.amount_paid)}</td>
+                    <td className="is-numeric">{money(enr.balance_remaining)}</td>
+                    <td><PaymentStatusBadge status={enr.payment_status} /></td>
+                    <td className="payments-date">{new Date(enr.enrolled_at).toLocaleDateString()}</td>
                   </tr>
                 );
               })}
@@ -157,13 +160,7 @@ export default function CohortEnrollments() {
                 ))}
               </select>
             </label>
-
-            <label>
-              Payment status
-              <select value={pickedPaymentStatus} onChange={(e) => setPickedPaymentStatus(e.target.value)}>
-                {PAYMENT_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </label>
+            <span className="form-hint">Payment starts pending — record installments for this student from the Payments page once they've enrolled.</span>
 
             <button type="submit" className="btn btn--primary btn--full" disabled={saving}>
               {saving ? 'Enrolling...' : 'Enroll Student'}

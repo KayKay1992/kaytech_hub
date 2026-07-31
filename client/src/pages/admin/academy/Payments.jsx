@@ -9,53 +9,103 @@ const PAYMENT_METHODS = [
   { value: 'cash', label: 'Cash' },
   { value: 'other', label: 'Other' },
 ];
-const STATUS_OPTIONS = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'partial', label: 'Part Payment' },
-  { value: 'paid', label: 'Completed Payment' },
-];
 const methodLabel = (value) => PAYMENT_METHODS.find((m) => m.value === value)?.label || '—';
 const money = (n) => `₦${Number(n || 0).toLocaleString()}`;
 
-const emptyCreateForm = { studentId: '', cohortId: '', amount: '', status: 'pending', amountPaid: '', method: '', note: '' };
-const emptyEditForm = { amount: '', status: 'pending', amountPaid: '', method: '', note: '' };
+function InstallmentList({ payments, onMarkPaid, onDelete, busyId }) {
+  if (!payments || payments.length === 0) {
+    return <p className="payments-empty">No installments recorded yet.</p>;
+  }
+  return (
+    <div className="payout-student-list">
+      {payments.map((p) => (
+        <div className="payout-student-row" key={p._id}>
+          <div className="payout-student-row__info">
+            <strong>{money(p.amount)}</strong>
+            <span className="payments-muted">
+              {p.status === 'paid'
+                ? `${methodLabel(p.payment_method)} · ${new Date(p.paid_at).toLocaleDateString()}`
+                : `Recorded ${new Date(p.created_at).toLocaleDateString()}`}
+              {p.reference_note ? ` · ${p.reference_note}` : ''}
+            </span>
+          </div>
+          <PaymentStatusBadge status={p.status} />
+          <div className="admin-table__actions">
+            {p.status === 'pending' ? (
+              <>
+                <button type="button" className="btn btn--primary" disabled={busyId === p._id} onClick={() => onMarkPaid(p)}>Mark Paid</button>
+                <button type="button" className="btn btn--ghost" disabled={busyId === p._id} onClick={() => onDelete(p._id)}>
+                  {busyId === p._id ? 'Deleting...' : 'Delete'}
+                </button>
+              </>
+            ) : (
+              <span className="payments-muted payments-muted--paid">Verified</span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function EnrollmentRow({ enr, onAddInstallment, onMarkPaid, onDelete, busyId }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <>
+      <tr>
+        <td>{enr.student_id?.name || '—'}<br /><span className="payments-muted">{enr.student_id?.email}</span></td>
+        <td>{enr.cohort_id?.course_id?.title || '—'}<br /><span className="payments-muted">{enr.cohort_id?.name}</span></td>
+        <td className="is-numeric">{money(enr.total_fee)}</td>
+        <td className="is-numeric">{money(enr.amount_paid)}</td>
+        <td className="is-numeric payments-amount">{money(enr.balance_remaining)}</td>
+        <td><PaymentStatusBadge status={enr.payment_status} /></td>
+        <td>
+          <div className="admin-table__actions">
+            <button type="button" className="btn btn--primary" onClick={() => onAddInstallment(enr)}>+ Installment</button>
+            <button type="button" className="btn btn--ghost" onClick={() => setExpanded((v) => !v)}>
+              {expanded ? 'Hide History' : `History (${enr.payments?.length || 0})`}
+            </button>
+          </div>
+        </td>
+      </tr>
+      {expanded && (
+        <tr className="payout-history-tr">
+          <td colSpan={7}>
+            <InstallmentList payments={enr.payments} onMarkPaid={onMarkPaid} onDelete={onDelete} busyId={busyId} />
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+const emptyInstallmentForm = { amount: '', status: 'pending', method: '', note: '' };
 
 export default function AdminPayments() {
-  const [payments, setPayments] = useState([]);
-  const [students, setStudents] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [tab, setTab] = useState('pending');
+  const [tab, setTab] = useState('outstanding');
   const [search, setSearch] = useState('');
+  const [busyId, setBusyId] = useState(null);
 
-  // Create
-  const [creating, setCreating] = useState(false);
-  const [createForm, setCreateForm] = useState(emptyCreateForm);
-  const [cohortOptions, setCohortOptions] = useState([]);
-  const [cohortsLoading, setCohortsLoading] = useState(false);
-  const [createError, setCreateError] = useState('');
-  const [createSaving, setCreateSaving] = useState(false);
+  const [addingTo, setAddingTo] = useState(null);
+  const [installmentForm, setInstallmentForm] = useState(emptyInstallmentForm);
+  const [addError, setAddError] = useState('');
+  const [addSaving, setAddSaving] = useState(false);
 
-  // Edit
-  const [editing, setEditing] = useState(null); // payment object
-  const [editForm, setEditForm] = useState(emptyEditForm);
-  const [editError, setEditError] = useState('');
-  const [editSaving, setEditSaving] = useState(false);
-
-  // Delete
-  const [confirmingId, setConfirmingId] = useState(null);
-  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [markingPaid, setMarkingPaid] = useState(null);
+  const [markMethod, setMarkMethod] = useState('');
+  const [markError, setMarkError] = useState('');
+  const [markSaving, setMarkSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
     setError('');
     try {
-      const [paymentsRes, studentsRes] = await Promise.all([
-        api.get('/admin/academy/payments'),
-        api.get('/users', { params: { role: 'student' } }),
-      ]);
-      setPayments(paymentsRes.data.payments);
-      setStudents(studentsRes.data.users);
+      const res = await api.get('/admin/academy/enrollments');
+      setEnrollments(res.data.enrollments);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load payments');
     } finally {
@@ -66,180 +116,100 @@ export default function AdminPayments() {
   useEffect(() => { load(); }, []);
 
   const stats = useMemo(() => {
-    const byStatus = (s) => payments.filter((p) => p.status === s);
+    const outstanding = enrollments.filter((e) => e.balance_remaining > 0);
+    const settled = enrollments.filter((e) => e.balance_remaining === 0 && e.amount_paid > 0);
     return {
-      pendingCount: byStatus('pending').length,
-      partialCount: byStatus('partial').length,
-      paidCount: byStatus('paid').length,
-      totalCollected: payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0),
+      outstandingCount: outstanding.length,
+      settledCount: settled.length,
+      totalCollected: enrollments.reduce((sum, e) => sum + (e.amount_paid || 0), 0),
+      totalOutstanding: enrollments.reduce((sum, e) => sum + (e.balance_remaining || 0), 0),
     };
-  }, [payments]);
+  }, [enrollments]);
 
-  const visiblePayments = useMemo(() => {
+  const visible = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return payments.filter((p) => {
-      if (tab !== 'all' && p.status !== tab) return false;
+    return enrollments.filter((e) => {
+      if (tab === 'outstanding' && !(e.balance_remaining > 0)) return false;
+      if (tab === 'settled' && !(e.balance_remaining === 0 && e.amount_paid > 0)) return false;
       if (!q) return true;
-      const haystack = `${p.student_id?.name || ''} ${p.student_id?.email || ''} ${p.cohort_id?.name || ''} ${p.cohort_id?.course_id?.title || ''}`.toLowerCase();
+      const haystack = `${e.student_id?.name || ''} ${e.student_id?.email || ''} ${e.cohort_id?.name || ''} ${e.cohort_id?.course_id?.title || ''}`.toLowerCase();
       return haystack.includes(q);
     });
-  }, [payments, tab, search]);
+  }, [enrollments, tab, search]);
 
-  // ---------- Create ----------
-
-  const openCreate = () => {
-    setCreateForm(emptyCreateForm);
-    setCohortOptions([]);
-    setCreateError('');
-    setCreating(true);
+  const openAdd = (enr) => {
+    setAddingTo(enr);
+    setInstallmentForm(emptyInstallmentForm);
+    setAddError('');
   };
 
-  const paidCohortIdsFor = (studentId) => new Set(
-    payments.filter((p) => p.student_id?._id === studentId).map((p) => p.cohort_id?._id),
-  );
-
-  const handleCreateStudentChange = async (studentId) => {
-    setCreateForm((f) => ({ ...f, studentId, cohortId: '' }));
-    setCohortOptions([]);
-    if (!studentId) return;
-    setCohortsLoading(true);
-    try {
-      const res = await api.get('/admin/academy/enrollments', { params: { student_id: studentId } });
-      const taken = paidCohortIdsFor(studentId);
-      setCohortOptions(res.data.enrollments.filter((e) => !taken.has(e.cohort_id?._id)));
-    } catch {
-      setCohortOptions([]);
-    } finally {
-      setCohortsLoading(false);
-    }
-  };
-
-  const handleCreate = async (e) => {
+  const handleAdd = async (e) => {
     e.preventDefault();
-    setCreateError('');
-    const { studentId, cohortId, amount, status, amountPaid, method, note } = createForm;
-    if (!studentId || !cohortId) {
-      setCreateError('Please select a student and a cohort.');
+    setAddError('');
+    const { amount, status, method, note } = installmentForm;
+    if (amount === '' || Number(amount) <= 0) {
+      setAddError('Please enter a valid installment amount.');
       return;
     }
-    if (amount === '' || Number(amount) < 0) {
-      setCreateError('Please enter a valid total amount.');
+    if (status === 'paid' && !method) {
+      setAddError('Payment method is required to record this installment as already received.');
       return;
     }
-    if (status !== 'pending' && !method) {
-      setCreateError('Payment method is required once any money has been received.');
-      return;
-    }
-    if (status === 'partial' && (amountPaid === '' || Number(amountPaid) <= 0 || Number(amountPaid) >= Number(amount))) {
-      setCreateError('Amount paid must be greater than 0 and less than the total for a part payment.');
-      return;
-    }
-    setCreateSaving(true);
+    setAddSaving(true);
     try {
-      const res = await api.post('/admin/academy/payments', {
-        student_id: studentId,
-        cohort_id: cohortId,
+      await api.post('/admin/academy/payments', {
+        student_id: addingTo.student_id._id,
+        cohort_id: addingTo.cohort_id._id,
         amount,
         status,
-        amount_paid: amountPaid,
         payment_method: method,
         reference_note: note,
       });
-      setPayments((prev) => [res.data.payment, ...prev]);
-      setCreating(false);
+      await load();
+      setAddingTo(null);
     } catch (err) {
-      setCreateError(err.response?.data?.message || 'Failed to create payment');
+      setAddError(err.response?.data?.message || 'Failed to record installment');
     } finally {
-      setCreateSaving(false);
+      setAddSaving(false);
     }
   };
 
-  // ---------- Edit ----------
-
-  const openEdit = (payment) => {
-    setEditing(payment);
-    setEditForm({
-      amount: String(payment.amount),
-      status: payment.status,
-      amountPaid: payment.status === 'partial' ? String(payment.amount_paid) : '',
-      method: payment.payment_method || '',
-      note: payment.reference_note || '',
-    });
-    setEditError('');
+  const openMarkPaid = (payment) => {
+    setMarkingPaid(payment);
+    setMarkMethod('');
+    setMarkError('');
   };
 
-  const handleEdit = async (e) => {
+  const handleMarkPaid = async (e) => {
     e.preventDefault();
-    setEditError('');
-    const { amount, status, amountPaid, method, note } = editForm;
-    if (amount === '' || Number(amount) < 0) {
-      setEditError('Please enter a valid total amount.');
+    setMarkError('');
+    if (!markMethod) {
+      setMarkError('Please select a payment method.');
       return;
     }
-    if (status !== 'pending' && !method) {
-      setEditError('Payment method is required once any money has been received.');
-      return;
-    }
-    if (status === 'partial' && (amountPaid === '' || Number(amountPaid) <= 0 || Number(amountPaid) >= Number(amount))) {
-      setEditError('Amount paid must be greater than 0 and less than the total for a part payment.');
-      return;
-    }
-    setEditSaving(true);
+    setMarkSaving(true);
     try {
-      const res = await api.patch(`/admin/academy/payments/${editing._id}`, {
-        amount,
-        status,
-        amount_paid: amountPaid,
-        payment_method: method,
-        reference_note: note,
-      });
-      setPayments((prev) => prev.map((p) => (p._id === editing._id ? res.data.payment : p)));
-      setEditing(null);
+      await api.patch(`/admin/academy/payments/${markingPaid._id}`, { status: 'paid', payment_method: markMethod });
+      await load();
+      setMarkingPaid(null);
     } catch (err) {
-      setEditError(err.response?.data?.message || 'Failed to update payment');
+      setMarkError(err.response?.data?.message || 'Failed to mark installment paid');
     } finally {
-      setEditSaving(false);
+      setMarkSaving(false);
     }
   };
 
-  // ---------- Delete ----------
-
-  const handleDelete = async (id) => {
-    setDeleteBusy(true);
+  const handleDelete = async (paymentId) => {
+    setBusyId(paymentId);
     setError('');
     try {
-      await api.delete(`/admin/academy/payments/${id}`);
-      setPayments((prev) => prev.filter((p) => p._id !== id));
+      await api.delete(`/admin/academy/payments/${paymentId}`);
+      await load();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete payment');
+      setError(err.response?.data?.message || 'Failed to delete installment');
     } finally {
-      setDeleteBusy(false);
-      setConfirmingId(null);
+      setBusyId(null);
     }
-  };
-
-  const renderAmountCell = (p) => {
-    if (p.status === 'paid') {
-      return (
-        <>
-          <span className="payments-amount">{money(p.amount)}</span>
-          <br /><span className="payments-muted payments-muted--paid">Paid in full</span>
-        </>
-      );
-    }
-    if (p.status === 'partial') {
-      const balance = p.amount - p.amount_paid;
-      return (
-        <>
-          <span className="payments-amount">{money(p.amount)}</span>
-          <div className="payments-balance-track" aria-hidden="true">
-            <div className="payments-balance-fill" style={{ width: `${Math.min(100, (p.amount_paid / p.amount) * 100)}%` }} />
-          </div>
-          <span className="payments-muted">{money(p.amount_paid)} paid &middot; {money(balance)} due</span>
-        </>
-      );
-    }
-    return <span className="payments-amount">{money(p.amount)}</span>;
   };
 
   return (
@@ -248,40 +218,38 @@ export default function AdminPayments() {
         <div className="admin-page-header">
           <div>
             <h1>Payments</h1>
-            <p className="admin-dashboard__subtitle">Offline payment tracking for Academy enrollments — bank transfer or cash, recorded manually.</p>
+            <p className="admin-dashboard__subtitle">
+              Offline installment tracking for Academy enrollments — students can pay in parts; each verified installment updates their balance and the instructor payout ledger.
+            </p>
           </div>
-          <button type="button" className="btn btn--primary" onClick={openCreate}>Record Payment</button>
         </div>
       </Reveal>
 
       <div className="stat-grid payments-stat-grid">
         <Reveal as="div" className="stat-card" index={0}>
-          <span className="stat-card__value">{stats.pendingCount}</span>
-          <span className="stat-card__label">Pending</span>
+          <span className="stat-card__value">{stats.outstandingCount}</span>
+          <span className="stat-card__label">With Balance Owing</span>
         </Reveal>
         <Reveal as="div" className="stat-card" index={1}>
-          <span className="stat-card__value">{stats.partialCount}</span>
-          <span className="stat-card__label">Part Payment</span>
+          <span className="stat-card__value">{stats.settledCount}</span>
+          <span className="stat-card__label">Fully Paid</span>
         </Reveal>
-        <Reveal as="div" className="stat-card" index={2}>
-          <span className="stat-card__value">{stats.paidCount}</span>
-          <span className="stat-card__label">Completed</span>
-        </Reveal>
-        <Reveal as="div" className="stat-card stat-card--accent" index={3}>
+        <Reveal as="div" className="stat-card stat-card--accent" index={2}>
           <span className="stat-card__value">{money(stats.totalCollected)}</span>
           <span className="stat-card__label">Total Collected</span>
+        </Reveal>
+        <Reveal as="div" className="stat-card" index={3}>
+          <span className="stat-card__value">{money(stats.totalOutstanding)}</span>
+          <span className="stat-card__label">Total Outstanding</span>
         </Reveal>
       </div>
 
       <div className="payments-toolbar">
         <div className="notification-tabs">
-          <button type="button" className={tab === 'pending' ? 'is-active' : ''} onClick={() => setTab('pending')}>
-            Pending {stats.pendingCount > 0 && `(${stats.pendingCount})`}
+          <button type="button" className={tab === 'outstanding' ? 'is-active' : ''} onClick={() => setTab('outstanding')}>
+            Balance Owing {stats.outstandingCount > 0 && `(${stats.outstandingCount})`}
           </button>
-          <button type="button" className={tab === 'partial' ? 'is-active' : ''} onClick={() => setTab('partial')}>
-            Part Payment {stats.partialCount > 0 && `(${stats.partialCount})`}
-          </button>
-          <button type="button" className={tab === 'paid' ? 'is-active' : ''} onClick={() => setTab('paid')}>Completed</button>
+          <button type="button" className={tab === 'settled' ? 'is-active' : ''} onClick={() => setTab('settled')}>Fully Paid</button>
           <button type="button" className={tab === 'all' ? 'is-active' : ''} onClick={() => setTab('all')}>All</button>
         </div>
         <div className="user-filters payments-search">
@@ -299,9 +267,9 @@ export default function AdminPayments() {
       <div className="invite-table-wrap">
         {loading ? (
           <p className="payments-empty">Loading payments...</p>
-        ) : visiblePayments.length === 0 ? (
+        ) : visible.length === 0 ? (
           <p className="payments-empty">
-            {search ? 'No payments match your search.' : `No ${tab === 'all' ? '' : tab} payments to show.`}
+            {search ? 'No enrollments match your search.' : `No enrollments with ${tab === 'all' ? 'any payment activity' : tab === 'outstanding' ? 'a balance owing' : 'a full payment'} to show.`}
           </p>
         ) : (
           <table className="invite-table payments-table">
@@ -309,116 +277,58 @@ export default function AdminPayments() {
               <tr>
                 <th>Student</th>
                 <th>Course / Cohort</th>
-                <th>Amount</th>
+                <th className="is-numeric">Total Fee</th>
+                <th className="is-numeric">Paid</th>
+                <th className="is-numeric">Balance</th>
                 <th>Status</th>
-                <th>Method</th>
-                <th>Note</th>
-                <th>Paid At</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {visiblePayments.map((p) => (
-                <tr key={p._id}>
-                  <td>{p.student_id?.name || '—'}<br /><span className="payments-muted">{p.student_id?.email}</span></td>
-                  <td>{p.cohort_id?.course_id?.title || '—'}<br /><span className="payments-muted">{p.cohort_id?.name}</span></td>
-                  <td className="payments-amount-cell">{renderAmountCell(p)}</td>
-                  <td><PaymentStatusBadge status={p.status} /></td>
-                  <td>{methodLabel(p.payment_method)}</td>
-                  <td className="payments-note" title={p.reference_note || ''}>{p.reference_note || '—'}</td>
-                  <td className="payments-date">{p.paid_at ? new Date(p.paid_at).toLocaleDateString() : '—'}</td>
-                  <td>
-                    {confirmingId === p._id ? (
-                      <span className="confirm-delete">
-                        <span>Delete this payment?</span>
-                        <button type="button" className="btn btn--danger" disabled={deleteBusy} onClick={() => handleDelete(p._id)}>
-                          {deleteBusy ? 'Deleting...' : 'Confirm'}
-                        </button>
-                        <button type="button" className="btn btn--ghost" onClick={() => setConfirmingId(null)}>Cancel</button>
-                      </span>
-                    ) : (
-                      <div className="admin-table__actions">
-                        <button type="button" className="btn btn--ghost" onClick={() => openEdit(p)}>Edit</button>
-                        <button type="button" className="btn btn--ghost" onClick={() => setConfirmingId(p._id)}>Delete</button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
+              {visible.map((enr) => (
+                <EnrollmentRow
+                  key={enr._id}
+                  enr={enr}
+                  onAddInstallment={openAdd}
+                  onMarkPaid={openMarkPaid}
+                  onDelete={handleDelete}
+                  busyId={busyId}
+                />
               ))}
             </tbody>
           </table>
         )}
       </div>
 
-      {creating && (
-        <Modal title="Record Payment" onClose={() => setCreating(false)}>
-          <form className="auth-form" onSubmit={handleCreate}>
-            {createError && <p className="form-error">{createError}</p>}
+      {addingTo && (
+        <Modal title={`Record Installment: ${addingTo.student_id?.name || ''}`} onClose={() => setAddingTo(null)}>
+          <p className="modal__meta">{addingTo.cohort_id?.course_id?.title} · {addingTo.cohort_id?.name} · Balance: {money(addingTo.balance_remaining)}</p>
+          <form className="auth-form" onSubmit={handleAdd}>
+            {addError && <p className="form-error">{addError}</p>}
 
             <label>
-              Student
-              <select value={createForm.studentId} onChange={(e) => handleCreateStudentChange(e.target.value)} required>
-                <option value="">Select a student...</option>
-                {students.map((s) => (
-                  <option key={s._id} value={s._id}>{s.name} ({s.email})</option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Cohort
-              <select
-                value={createForm.cohortId}
-                onChange={(e) => setCreateForm((f) => ({ ...f, cohortId: e.target.value }))}
-                disabled={!createForm.studentId || cohortsLoading}
-                required
-              >
-                <option value="">
-                  {!createForm.studentId ? 'Select a student first...' : cohortsLoading ? 'Loading cohorts...' : cohortOptions.length === 0 ? 'No eligible enrollments' : 'Select a cohort...'}
-                </option>
-                {cohortOptions.map((enr) => (
-                  <option key={enr._id} value={enr.cohort_id?._id}>
-                    {enr.cohort_id?.course_id?.title} — {enr.cohort_id?.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label>
-              Total amount
+              Installment amount (₦)
               <input
                 type="number" min="0" step="0.01"
-                value={createForm.amount}
-                onChange={(e) => setCreateForm((f) => ({ ...f, amount: e.target.value }))}
-                placeholder="e.g. 150000"
+                value={installmentForm.amount}
+                onChange={(e) => setInstallmentForm((f) => ({ ...f, amount: e.target.value }))}
+                placeholder="e.g. 100000"
                 required
               />
             </label>
 
             <label>
               Status
-              <select value={createForm.status} onChange={(e) => setCreateForm((f) => ({ ...f, status: e.target.value }))}>
-                {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              <select value={installmentForm.status} onChange={(e) => setInstallmentForm((f) => ({ ...f, status: e.target.value }))}>
+                <option value="pending">Pending</option>
+                <option value="paid">Already Received</option>
               </select>
             </label>
 
-            {createForm.status === 'partial' && (
-              <label>
-                Amount paid so far
-                <input
-                  type="number" min="0" step="0.01"
-                  value={createForm.amountPaid}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, amountPaid: e.target.value }))}
-                  placeholder="e.g. 50000"
-                  required
-                />
-              </label>
-            )}
-
-            {createForm.status !== 'pending' && (
+            {installmentForm.status === 'paid' && (
               <label>
                 Payment method
-                <select value={createForm.method} onChange={(e) => setCreateForm((f) => ({ ...f, method: e.target.value }))} required>
+                <select value={installmentForm.method} onChange={(e) => setInstallmentForm((f) => ({ ...f, method: e.target.value }))} required>
                   <option value="">Select a method...</option>
                   {PAYMENT_METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                 </select>
@@ -429,77 +339,35 @@ export default function AdminPayments() {
               Reference / note (optional)
               <textarea
                 rows={3}
-                value={createForm.note}
-                onChange={(e) => setCreateForm((f) => ({ ...f, note: e.target.value }))}
+                value={installmentForm.note}
+                onChange={(e) => setInstallmentForm((f) => ({ ...f, note: e.target.value }))}
                 placeholder="e.g. Bank transfer ref #12345, or 'paid in cash at the office'"
               />
             </label>
 
-            <button type="submit" className="btn btn--primary btn--full" disabled={createSaving}>
-              {createSaving ? 'Saving...' : 'Record Payment'}
+            <button type="submit" className="btn btn--primary btn--full" disabled={addSaving}>
+              {addSaving ? 'Saving...' : 'Record Installment'}
             </button>
           </form>
         </Modal>
       )}
 
-      {editing && (
-        <Modal title={`Edit Payment: ${editing.student_id?.name || ''}`} onClose={() => setEditing(null)}>
-          <p className="modal__meta">{editing.cohort_id?.course_id?.title} · {editing.cohort_id?.name}</p>
-          <form className="auth-form" onSubmit={handleEdit}>
-            {editError && <p className="form-error">{editError}</p>}
+      {markingPaid && (
+        <Modal title="Mark Installment Paid" onClose={() => setMarkingPaid(null)}>
+          <p className="modal__meta">{money(markingPaid.amount)}{markingPaid.reference_note ? ` · ${markingPaid.reference_note}` : ''}</p>
+          <form className="auth-form" onSubmit={handleMarkPaid}>
+            {markError && <p className="form-error">{markError}</p>}
 
             <label>
-              Total amount
-              <input
-                type="number" min="0" step="0.01"
-                value={editForm.amount}
-                onChange={(e) => setEditForm((f) => ({ ...f, amount: e.target.value }))}
-                required
-              />
-            </label>
-
-            <label>
-              Status
-              <select value={editForm.status} onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}>
-                {STATUS_OPTIONS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+              Payment method
+              <select value={markMethod} onChange={(e) => setMarkMethod(e.target.value)} required>
+                <option value="">Select a method...</option>
+                {PAYMENT_METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
               </select>
             </label>
 
-            {editForm.status === 'partial' && (
-              <label>
-                Amount paid so far
-                <input
-                  type="number" min="0" step="0.01"
-                  value={editForm.amountPaid}
-                  onChange={(e) => setEditForm((f) => ({ ...f, amountPaid: e.target.value }))}
-                  placeholder="e.g. 50000"
-                  required
-                />
-              </label>
-            )}
-
-            {editForm.status !== 'pending' && (
-              <label>
-                Payment method
-                <select value={editForm.method} onChange={(e) => setEditForm((f) => ({ ...f, method: e.target.value }))} required>
-                  <option value="">Select a method...</option>
-                  {PAYMENT_METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-                </select>
-              </label>
-            )}
-
-            <label>
-              Reference / note (optional)
-              <textarea
-                rows={3}
-                value={editForm.note}
-                onChange={(e) => setEditForm((f) => ({ ...f, note: e.target.value }))}
-                placeholder="e.g. Bank transfer ref #12345, or 'paid in cash at the office'"
-              />
-            </label>
-
-            <button type="submit" className="btn btn--primary btn--full" disabled={editSaving}>
-              {editSaving ? 'Saving...' : 'Save Changes'}
+            <button type="submit" className="btn btn--primary btn--full" disabled={markSaving}>
+              {markSaving ? 'Saving...' : 'Confirm Paid'}
             </button>
           </form>
         </Modal>

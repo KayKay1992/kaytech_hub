@@ -18,6 +18,7 @@ const {
   getAttendanceRoster,
   saveAttendance,
   getAttendanceHistory,
+  listMyPayouts,
 } = require('../controllers/instructorAcademyController');
 const { protect, authorize } = require('../middleware/auth');
 const { fileUploadMiddleware } = require('../utils/upload');
@@ -55,5 +56,7 @@ router.patch('/submissions/:id/grade', gradeSubmission);
 router.get('/cohorts/:cohortId/attendance/roster', getAttendanceRoster);
 router.get('/cohorts/:cohortId/attendance/history', getAttendanceHistory);
 router.post('/cohorts/:cohortId/attendance', saveAttendance);
+
+router.get('/payouts', listMyPayouts);
 
 module.exports = router;

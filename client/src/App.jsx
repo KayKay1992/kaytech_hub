@@ -50,11 +50,13 @@ import AdminRegistrations from './pages/admin/academy/Registrations';
 import AdminCohortEnrollments from './pages/admin/academy/CohortEnrollments';
 import AdminCohortAttendance from './pages/admin/academy/CohortAttendance';
 import AdminPayments from './pages/admin/academy/Payments';
+import AdminPayouts from './pages/admin/academy/Payouts';
 import InstructorCourses from './pages/instructor/academy/Courses';
 import InstructorCourseContent from './pages/instructor/academy/CourseContent';
 import InstructorAssignments from './pages/instructor/academy/Assignments';
 import InstructorAssignmentSubmissions from './pages/instructor/academy/AssignmentSubmissions';
 import InstructorAttendance from './pages/instructor/academy/Attendance';
+import InstructorPayouts from './pages/instructor/academy/Payouts';
 
 function App() {
   return (
@@ -99,6 +101,7 @@ function App() {
           <Route path="academy/assignments" element={<InstructorAssignments />} />
           <Route path="academy/assignments/:assignmentId/submissions" element={<InstructorAssignmentSubmissions />} />
           <Route path="academy/attendance" element={<InstructorAttendance />} />
+          <Route path="academy/payouts" element={<InstructorPayouts />} />
         </Route>
       </Route>
 
@@ -128,6 +131,7 @@ function App() {
           <Route path="academy/approvals" element={<AdminApprovals />} />
           <Route path="academy/registrations" element={<AdminRegistrations />} />
           <Route path="academy/payments" element={<AdminPayments />} />
+          <Route path="academy/payouts" element={<AdminPayouts />} />
         </Route>
       </Route>
     </Routes>

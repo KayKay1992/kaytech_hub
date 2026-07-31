@@ -15,6 +15,7 @@ const INSTRUCTOR_NAV_GROUPS = [
       { to: '/instructor/academy/courses', label: 'My Courses' },
       { to: '/instructor/academy/assignments', label: 'Assignments' },
       { to: '/instructor/academy/attendance', label: 'Attendance' },
+      { to: '/instructor/academy/payouts', label: 'Payouts' },
       { to: '/instructor/students', label: 'Students', disabled: true },
     ],
   },
