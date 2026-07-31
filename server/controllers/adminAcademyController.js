@@ -5,6 +5,7 @@ const Lesson = require('../models/Lesson');
 const User = require('../models/User');
 const CourseRegistration = require('../models/CourseRegistration');
 const Enrollment = require('../models/Enrollment');
+const Attendance = require('../models/Attendance');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
 
 const COURSE_STATUSES = ['draft', 'published', 'archived'];
@@ -539,6 +540,26 @@ const updateEnrollment = async (req, res) => {
   }
 };
 
+// ---------- Attendance ----------
+
+// GET /api/admin/academy/cohorts/:id/attendance — full history for a cohort
+const getCohortAttendance = async (req, res) => {
+  try {
+    const cohort = await Cohort.findById(req.params.id);
+    if (!cohort) {
+      return res.status(404).json({ message: 'Cohort not found' });
+    }
+
+    const records = await Attendance.find({ cohort_id: req.params.id })
+      .populate('student_id', 'name email')
+      .sort({ date: -1 });
+
+    res.json({ records });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load attendance', error: err.message });
+  }
+};
+
 module.exports = {
   listCourses,
   getCourse,
@@ -561,4 +582,5 @@ module.exports = {
   listEnrollments,
   createEnrollment,
   updateEnrollment,
+  getCohortAttendance,
 };

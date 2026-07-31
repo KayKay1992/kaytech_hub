@@ -21,6 +21,7 @@ const {
   listEnrollments,
   createEnrollment,
   updateEnrollment,
+  getCohortAttendance,
 } = require('../controllers/adminAcademyController');
 const { protect, authorize } = require('../middleware/auth');
 const { imageUploadMiddleware } = require('../utils/upload');
@@ -55,5 +56,7 @@ router.patch('/academy/registrations/:id/convert', convertRegistration);
 router.get('/academy/enrollments', listEnrollments);
 router.post('/academy/enrollments', createEnrollment);
 router.patch('/academy/enrollments/:id', updateEnrollment);
+
+router.get('/academy/cohorts/:id/attendance', getCohortAttendance);
 
 module.exports = router;

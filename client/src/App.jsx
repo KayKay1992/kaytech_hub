@@ -48,10 +48,12 @@ import AdminCohortForm from './pages/admin/academy/CohortForm';
 import AdminApprovals from './pages/admin/academy/Approvals';
 import AdminRegistrations from './pages/admin/academy/Registrations';
 import AdminCohortEnrollments from './pages/admin/academy/CohortEnrollments';
+import AdminCohortAttendance from './pages/admin/academy/CohortAttendance';
 import InstructorCourses from './pages/instructor/academy/Courses';
 import InstructorCourseContent from './pages/instructor/academy/CourseContent';
 import InstructorAssignments from './pages/instructor/academy/Assignments';
 import InstructorAssignmentSubmissions from './pages/instructor/academy/AssignmentSubmissions';
+import InstructorAttendance from './pages/instructor/academy/Attendance';
 
 function App() {
   return (
@@ -95,6 +97,7 @@ function App() {
           <Route path="academy/courses/:courseId" element={<InstructorCourseContent />} />
           <Route path="academy/assignments" element={<InstructorAssignments />} />
           <Route path="academy/assignments/:assignmentId/submissions" element={<InstructorAssignmentSubmissions />} />
+          <Route path="academy/attendance" element={<InstructorAttendance />} />
         </Route>
       </Route>
 
@@ -120,6 +123,7 @@ function App() {
           <Route path="academy/cohorts/new" element={<AdminCohortForm />} />
           <Route path="academy/cohorts/:id/edit" element={<AdminCohortForm />} />
           <Route path="academy/cohorts/:id/enrollments" element={<AdminCohortEnrollments />} />
+          <Route path="academy/cohorts/:id/attendance" element={<AdminCohortAttendance />} />
           <Route path="academy/approvals" element={<AdminApprovals />} />
           <Route path="academy/registrations" element={<AdminRegistrations />} />
         </Route>

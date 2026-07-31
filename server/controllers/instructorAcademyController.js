@@ -4,6 +4,8 @@ const Module = require('../models/Module');
 const Lesson = require('../models/Lesson');
 const Assignment = require('../models/Assignment');
 const Submission = require('../models/Submission');
+const Enrollment = require('../models/Enrollment');
+const Attendance = require('../models/Attendance');
 const { uploadFile } = require('../utils/upload');
 
 // An instructor may only create/manage content for a course they're
@@ -423,6 +425,95 @@ const gradeSubmission = async (req, res) => {
   }
 };
 
+// GET /api/instructor/cohorts/:cohortId/attendance/roster?date=YYYY-MM-DD
+// Every enrolled student, merged with any attendance already saved for that
+// date (null status = not yet marked).
+const getAttendanceRoster = async (req, res) => {
+  try {
+    const assigned = await isAssignedToCohort(req.user._id, req.params.cohortId);
+    if (!assigned) {
+      return res.status(403).json({ message: 'You are not assigned to this cohort' });
+    }
+
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ message: 'date is required' });
+    }
+
+    const enrollments = await Enrollment.find({ cohort_id: req.params.cohortId }).populate('student_id', 'name email');
+    const records = await Attendance.find({ cohort_id: req.params.cohortId, date: new Date(date) });
+    const statusByStudentId = new Map(records.map((r) => [String(r.student_id), r.status]));
+
+    const roster = enrollments.map((e) => ({
+      student_id: e.student_id._id,
+      name: e.student_id.name,
+      email: e.student_id.email,
+      status: statusByStudentId.get(String(e.student_id._id)) || null,
+    }));
+
+    res.json({ date, roster });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load attendance roster', error: err.message });
+  }
+};
+
+// POST /api/instructor/cohorts/:cohortId/attendance — { date, records: [{student_id, status}] }
+// Upserts one Attendance doc per student for that date — safe to resave an
+// already-marked date to correct a mistake.
+const saveAttendance = async (req, res) => {
+  try {
+    const assigned = await isAssignedToCohort(req.user._id, req.params.cohortId);
+    if (!assigned) {
+      return res.status(403).json({ message: 'You are not assigned to this cohort' });
+    }
+
+    const { date, records } = req.body;
+    if (!date || !Array.isArray(records) || records.length === 0) {
+      return res.status(400).json({ message: 'date and a non-empty records array are required' });
+    }
+
+    const day = new Date(date);
+    await Promise.all(records.map(({ student_id, status }) => {
+      if (!['present', 'absent'].includes(status)) return null;
+      return Attendance.findOneAndUpdate(
+        { cohort_id: req.params.cohortId, student_id, date: day },
+        { status },
+        { upsert: true, setDefaultsOnInsert: true }
+      );
+    }));
+
+    res.json({ message: 'Attendance saved' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to save attendance', error: err.message });
+  }
+};
+
+// GET /api/instructor/cohorts/:cohortId/attendance/history — one row per
+// class date already marked, with present/absent counts, newest first.
+const getAttendanceHistory = async (req, res) => {
+  try {
+    const assigned = await isAssignedToCohort(req.user._id, req.params.cohortId);
+    if (!assigned) {
+      return res.status(403).json({ message: 'You are not assigned to this cohort' });
+    }
+
+    const records = await Attendance.find({ cohort_id: req.params.cohortId });
+    const byDate = new Map();
+    for (const r of records) {
+      const key = r.date.toISOString().slice(0, 10);
+      if (!byDate.has(key)) byDate.set(key, { date: key, present_count: 0, absent_count: 0 });
+      const entry = byDate.get(key);
+      if (r.status === 'present') entry.present_count += 1;
+      else entry.absent_count += 1;
+    }
+
+    const sessions = Array.from(byDate.values()).sort((a, b) => (a.date < b.date ? 1 : -1));
+    res.json({ sessions });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load attendance history', error: err.message });
+  }
+};
+
 module.exports = {
   listMyCourses,
   getCourseContent,
@@ -439,4 +530,7 @@ module.exports = {
   deleteAssignment,
   listAssignmentSubmissions,
   gradeSubmission,
+  getAttendanceRoster,
+  saveAttendance,
+  getAttendanceHistory,
 };

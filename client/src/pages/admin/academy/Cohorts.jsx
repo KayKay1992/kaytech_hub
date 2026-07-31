@@ -85,6 +85,7 @@ export default function AdminCohorts() {
                   <td className="admin-table__actions">
                     <Link to={`/admin/academy/cohorts/${cohort._id}/edit`} className="btn btn--ghost">Edit</Link>
                     <Link to={`/admin/academy/cohorts/${cohort._id}/enrollments`} className="btn btn--ghost">Enrollments</Link>
+                    <Link to={`/admin/academy/cohorts/${cohort._id}/attendance`} className="btn btn--ghost">Attendance</Link>
                   </td>
                 </tr>
               ))}

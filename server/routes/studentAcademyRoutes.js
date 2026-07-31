@@ -5,6 +5,7 @@ const {
   toggleLessonComplete,
   listMyAssignments,
   submitAssignment,
+  getMyAttendance,
 } = require('../controllers/studentAcademyController');
 const { protect, authorize } = require('../middleware/auth');
 const { fileUploadMiddleware } = require('../utils/upload');
@@ -19,5 +20,7 @@ router.post('/cohorts/:cohortId/lessons/:lessonId/complete', toggleLessonComplet
 
 router.get('/assignments', listMyAssignments);
 router.post('/assignments/:id/submit', fileUploadMiddleware.single('file'), submitAssignment);
+
+router.get('/cohorts/:cohortId/attendance', getMyAttendance);
 
 module.exports = router;

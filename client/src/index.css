@@ -1476,6 +1476,219 @@ a:hover { color: var(--color-amber); }
 .academy-grade-form textarea { flex: 1; min-width: 220px; }
 .academy-grade-form .btn { align-self: flex-end; }
 
+/* Attendance — instructor checklist + history, reusing the same
+   .academy-status color language (teal-tinted = good, danger-tinted = bad)
+   instead of introducing new colors. */
+.attendance-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.attendance-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.attendance-toolbar input[type="date"] {
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-btn);
+  font-family: inherit;
+  font-size: 0.92rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+.attendance-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+.attendance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  transition: border-color 0.2s ease;
+}
+.attendance-row__student strong { display: block; font-size: 0.95rem; }
+.attendance-row__student span { color: var(--color-text-muted); font-size: 0.85rem; }
+.attendance-toggle { display: inline-flex; gap: 6px; }
+.attendance-toggle button {
+  padding: 7px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.attendance-toggle button:hover { border-color: var(--color-amber); }
+.attendance-toggle button.is-active--present {
+  background: color-mix(in srgb, var(--color-teal) 20%, transparent);
+  color: var(--color-navy);
+  border-color: transparent;
+}
+.attendance-toggle button.is-active--absent {
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
+  border-color: transparent;
+}
+.attendance-history-table td.is-numeric, .attendance-history-table th.is-numeric { text-align: right; }
+.attendance-history-row { cursor: pointer; }
+.attendance-history-row:hover { background: var(--color-bg); }
+
+/* Compact attendance list — student's own per-cohort history, shown in the
+   course-content page's sidebar rather than a full table. */
+.mini-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  margin-bottom: 18px;
+}
+.attendance-mini-list { list-style: none; margin: 0; padding: 0; }
+.attendance-mini-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.88rem;
+}
+.attendance-mini-list li:last-child { border-bottom: none; padding-bottom: 0; }
+
+/* Student curriculum viewer — lessons nested under a .course-section per
+   module, richer than the plain instructor-management list since students
+   need Mark Complete, file downloads, and the exercise text front and
+   center. */
+.lesson-list { list-style: none; margin: 0; padding: 0; }
+.lesson-item {
+  display: flex;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.lesson-item:last-child { padding-bottom: 4px; border-bottom: none; }
+.lesson-item__marker {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.lesson-item--done .lesson-item__marker {
+  background: var(--color-navy);
+  border-color: var(--color-navy);
+  color: var(--color-amber);
+}
+.lesson-item__body { flex: 1; min-width: 0; }
+.lesson-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.lesson-item__header h4 { margin: 0; }
+.lesson-item__files { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+
+/* Truncating "file chip" — used for lesson resources, submission links,
+   and anywhere else a possibly-long filename needs to stay on one line
+   without forcing the page to scroll horizontally. */
+.file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  padding: 9px 16px;
+  border-radius: var(--radius-btn);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-navy);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.file-chip:hover { border-color: var(--color-amber); text-decoration: none; }
+
+/* Custom file-input control — a styled label standing in for the native
+   input (hidden via .sr-only-file-input), so "choose a file" matches the
+   rest of the button/chip language instead of the browser-default widget. */
+.file-input-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 240px;
+  padding: 9px 16px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-btn);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.file-input-label:hover { border-color: var(--color-amber); color: var(--color-navy); }
+.file-input-label--chosen { border-style: solid; color: var(--color-navy); background: var(--color-surface); }
+.sr-only-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.lesson-exercise {
+  background: var(--color-navy);
+  color: #e8eaf5;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  white-space: pre-wrap;
+  margin: 0;
+}
+
 /* Enrollment completion progress — student "My Courses" cards, course
    content viewer, and dashboard cohort summaries all share this. */
 .progress-label {

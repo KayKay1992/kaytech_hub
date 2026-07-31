@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../../api/axios';
+import Reveal from '../../components/common/Reveal';
+import ProgressRing from '../../components/common/ProgressRing';
 
 export default function StudentCourseContent() {
   const { cohortId } = useParams();
   const [cohort, setCohort] = useState(null);
   const [modules, setModules] = useState([]);
+  const [attendance, setAttendance] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
@@ -24,8 +27,18 @@ export default function StudentCourseContent() {
     }
   };
 
+  const loadAttendance = async () => {
+    try {
+      const res = await api.get(`/student/cohorts/${cohortId}/attendance`);
+      setAttendance(res.data.records);
+    } catch {
+      setAttendance([]);
+    }
+  };
+
   useEffect(() => {
     load();
+    loadAttendance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cohortId]);
 
@@ -45,93 +58,131 @@ export default function StudentCourseContent() {
     }
   };
 
-  if (loading) return <div className="admin-dashboard"><p>Loading...</p></div>;
+  if (loading) return <section className="section"><p>Loading...</p></section>;
 
   const allLessons = modules.flatMap((mod) => mod.lessons);
   const completedCount = allLessons.filter((l) => l.is_complete).length;
   const progressPercent = allLessons.length > 0 ? Math.round((completedCount / allLessons.length) * 100) : 0;
 
+  const presentCount = attendance.filter((r) => r.status === 'present').length;
+  const attendanceRate = attendance.length > 0 ? Math.round((presentCount / attendance.length) * 100) : null;
+
+  const instructor = cohort?.instructor_id;
+
   return (
-    <div className="admin-dashboard">
-      <div className="admin-page-header">
-        <div>
-          <h1>{cohort?.course_id?.title}</h1>
-          <p className="admin-dashboard__subtitle">
-            <Link to="/student/courses">&larr; My Courses</Link>
-            {cohort && ` · ${cohort.name}${cohort.instructor_id?.name ? ` · Instructor: ${cohort.instructor_id.name}` : ''}`}
+    <section className="section">
+      <p className="course-detail__back"><Link to="/student/courses">&larr; My Courses</Link></p>
+
+      <Reveal as="div" className="dashboard-hero">
+        <div className="dashboard-hero__glow dashboard-hero__glow--one" aria-hidden="true" />
+        <div className="dashboard-hero__glow dashboard-hero__glow--two" aria-hidden="true" />
+
+        <div className="dashboard-hero__content">
+          {cohort?.name && <span className="badge badge--on-dark">{cohort.name}</span>}
+          <h1 className="dashboard-hero__title">{cohort?.course_id?.title}</h1>
+          <p className="dashboard-hero__subtitle">
+            {instructor?.name ? `Instructor: ${instructor.name}` : 'Instructor to be confirmed'}
           </p>
-        </div>
-      </div>
 
-      {allLessons.length > 0 && (
-        <div style={{ marginBottom: 28, maxWidth: 420 }}>
-          <div className="progress-label">
-            <span>{completedCount}/{allLessons.length} lessons complete</span>
-            <span>{progressPercent}%</span>
-          </div>
-          <div className="progress-bar">
-            <div className="progress-bar__fill" style={{ width: `${progressPercent}%` }} />
-          </div>
-        </div>
-      )}
-
-      {error && <p className="form-error">{error}</p>}
-
-      {modules.length === 0 ? (
-        <p>No lessons published for this course yet — check back soon.</p>
-      ) : (
-        modules.map((mod) => (
-          <div className="academy-module" key={mod._id}>
-            <div className="academy-module__header">
-              <h3>{mod.title}</h3>
-            </div>
-
-            {mod.lessons.length === 0 ? (
-              <p className="academy-lesson-list__empty">No lessons in this module yet.</p>
-            ) : (
-              <ul className="academy-lesson-list">
-                {mod.lessons.map((lesson) => (
-                  <li className="academy-lesson" key={lesson._id}>
-                    <div className="academy-lesson__row">
-                      <span>{lesson.title}</span>
-                      <button
-                        type="button"
-                        className={`btn ${lesson.is_complete ? 'btn--ghost' : 'btn--primary'}`}
-                        disabled={busyId === lesson._id}
-                        onClick={() => toggleComplete(lesson._id)}
-                      >
-                        {lesson.is_complete ? 'Completed ✓' : 'Mark Complete'}
-                      </button>
-                    </div>
-
-                    {lesson.notes_file_url && (
-                      <p>
-                        <a href={lesson.notes_file_url} target="_blank" rel="noreferrer" className="btn btn--ghost">
-                          Download Notes (PDF)
-                        </a>
-                      </p>
-                    )}
-
-                    {lesson.resources?.length > 0 && (
-                      <ul className="course-requirements-list">
-                        {lesson.resources.map((r, i) => (
-                          <li key={i}><a href={r.url} target="_blank" rel="noreferrer">{r.label}</a></li>
-                        ))}
-                      </ul>
-                    )}
-
-                    {lesson.coding_exercise && (
-                      <div className="academy-rejection-note" style={{ color: 'var(--color-text-muted)', whiteSpace: 'pre-wrap' }}>
-                        {lesson.coding_exercise}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
+          <div className="dashboard-hero__pills">
+            <span className="dashboard-hero__pill"><strong>{completedCount}/{allLessons.length}</strong>&nbsp;Lessons Complete</span>
+            {attendanceRate !== null && (
+              <span className="dashboard-hero__pill"><strong>{attendanceRate}%</strong>&nbsp;Attendance</span>
             )}
           </div>
-        ))
-      )}
-    </div>
+        </div>
+
+        <div className="dashboard-hero__ring-wrap">
+          <ProgressRing percent={progressPercent} />
+          <span className="dashboard-hero__ring-caption">Course Progress</span>
+        </div>
+      </Reveal>
+
+      {error && <p className="form-error" style={{ marginTop: 28 }}>{error}</p>}
+
+      <div className="course-layout">
+        <div className="course-layout__main">
+          {modules.length === 0 ? (
+            <Reveal as="div" className="course-section dashboard-empty-state">
+              <span className="dashboard-empty-state__icon" aria-hidden="true">📚</span>
+              <p>No lessons published for this course yet — check back soon.</p>
+            </Reveal>
+          ) : (
+            modules.map((mod, mi) => (
+              <Reveal as="div" className="course-section" key={mod._id} index={mi}>
+                <h2>{mod.title}</h2>
+
+                {mod.lessons.length === 0 ? (
+                  <p className="academy-lesson-list__empty">No lessons in this module yet.</p>
+                ) : (
+                  <ul className="lesson-list">
+                    {mod.lessons.map((lesson) => (
+                      <li className={`lesson-item ${lesson.is_complete ? 'lesson-item--done' : ''}`} key={lesson._id}>
+                        <span className="lesson-item__marker" aria-hidden="true">{lesson.is_complete ? '✓' : ''}</span>
+                        <div className="lesson-item__body">
+                          <div className="lesson-item__header">
+                            <h4>{lesson.title}</h4>
+                            <button
+                              type="button"
+                              className={`btn ${lesson.is_complete ? 'btn--ghost' : 'btn--primary'}`}
+                              disabled={busyId === lesson._id}
+                              onClick={() => toggleComplete(lesson._id)}
+                            >
+                              {lesson.is_complete ? 'Completed ✓' : 'Mark Complete'}
+                            </button>
+                          </div>
+
+                          {(lesson.notes_file_url || lesson.resources?.length > 0) && (
+                            <div className="lesson-item__files">
+                              {lesson.notes_file_url && (
+                                <a href={lesson.notes_file_url} target="_blank" rel="noreferrer" className="btn btn--ghost">
+                                  Download Notes (PDF)
+                                </a>
+                              )}
+                              {lesson.resources?.map((r, i) => (
+                                <a href={r.url} target="_blank" rel="noreferrer" className="file-chip" title={r.label} key={i}>
+                                  📄 {r.label}
+                                </a>
+                              ))}
+                            </div>
+                          )}
+
+                          {lesson.coding_exercise && (
+                            <pre className="lesson-exercise">{lesson.coding_exercise}</pre>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Reveal>
+            ))
+          )}
+        </div>
+
+        <div className="course-layout__aside">
+          <Reveal as="div" className="course-section" delay={0.1}>
+            <h2>Attendance History</h2>
+            {attendance.length === 0 ? (
+              <p>No attendance recorded yet.</p>
+            ) : (
+              <>
+                <span className="mini-stat">{presentCount}/{attendance.length} sessions present · {attendanceRate}%</span>
+                <ul className="attendance-mini-list">
+                  {attendance.map((r) => (
+                    <li key={r._id}>
+                      <span>{new Date(r.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <span className={`academy-status academy-status--${r.status === 'present' ? 'approved' : 'rejected'}`}>
+                        {r.status}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </Reveal>
+        </div>
+      </div>
+    </section>
   );
 }

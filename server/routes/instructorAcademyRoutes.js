@@ -15,6 +15,9 @@ const {
   deleteAssignment,
   listAssignmentSubmissions,
   gradeSubmission,
+  getAttendanceRoster,
+  saveAttendance,
+  getAttendanceHistory,
 } = require('../controllers/instructorAcademyController');
 const { protect, authorize } = require('../middleware/auth');
 const { fileUploadMiddleware } = require('../utils/upload');
@@ -48,5 +51,9 @@ router.delete('/assignments/:id', deleteAssignment);
 router.get('/assignments/:id/submissions', listAssignmentSubmissions);
 
 router.patch('/submissions/:id/grade', gradeSubmission);
+
+router.get('/cohorts/:cohortId/attendance/roster', getAttendanceRoster);
+router.get('/cohorts/:cohortId/attendance/history', getAttendanceHistory);
+router.post('/cohorts/:cohortId/attendance', saveAttendance);
 
 module.exports = router;

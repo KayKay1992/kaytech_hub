@@ -4,6 +4,7 @@ const Module = require('../models/Module');
 const Lesson = require('../models/Lesson');
 const Assignment = require('../models/Assignment');
 const Submission = require('../models/Submission');
+const Attendance = require('../models/Attendance');
 const { uploadFile } = require('../utils/upload');
 
 // GET /api/student/courses — every cohort I'm enrolled in, with live
@@ -169,4 +170,27 @@ const submitAssignment = async (req, res) => {
   }
 };
 
-module.exports = { listMyCourses, getCohortContent, toggleLessonComplete, listMyAssignments, submitAssignment };
+// GET /api/student/cohorts/:cohortId/attendance — my own attendance
+// history for a cohort I'm enrolled in, newest first
+const getMyAttendance = async (req, res) => {
+  try {
+    const enrollment = await Enrollment.findOne({ student_id: req.user._id, cohort_id: req.params.cohortId });
+    if (!enrollment) {
+      return res.status(403).json({ message: 'You are not enrolled in this cohort' });
+    }
+
+    const records = await Attendance.find({ cohort_id: req.params.cohortId, student_id: req.user._id }).sort({ date: -1 });
+    res.json({ records });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load attendance', error: err.message });
+  }
+};
+
+module.exports = {
+  listMyCourses,
+  getCohortContent,
+  toggleLessonComplete,
+  listMyAssignments,
+  submitAssignment,
+  getMyAttendance,
+};
