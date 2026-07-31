@@ -28,6 +28,8 @@ const {
   deletePayment,
   listPayouts,
   payInstructor,
+  generateCertificate,
+  listCertificates,
 } = require('../controllers/adminAcademyController');
 const { protect, authorize } = require('../middleware/auth');
 const { imageUploadMiddleware } = require('../utils/upload');
@@ -72,5 +74,8 @@ router.delete('/academy/payments/:id', deletePayment);
 
 router.get('/academy/payouts', listPayouts);
 router.post('/academy/payouts/:id/pay', payInstructor);
+
+router.get('/academy/certificates', listCertificates);
+router.post('/academy/certificates', generateCertificate);
 
 module.exports = router;

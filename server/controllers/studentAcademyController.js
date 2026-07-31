@@ -5,6 +5,7 @@ const Lesson = require('../models/Lesson');
 const Assignment = require('../models/Assignment');
 const Submission = require('../models/Submission');
 const Attendance = require('../models/Attendance');
+const Certificate = require('../models/Certificate');
 const { uploadFile } = require('../utils/upload');
 
 // GET /api/student/courses — every cohort I'm enrolled in, with live
@@ -186,6 +187,18 @@ const getMyAttendance = async (req, res) => {
   }
 };
 
+// GET /api/student/certificates — my own issued certificates, newest first
+const listMyCertificates = async (req, res) => {
+  try {
+    const certificates = await Certificate.find({ student_id: req.user._id })
+      .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } })
+      .sort({ issued_at: -1 });
+    res.json({ certificates });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load your certificates', error: err.message });
+  }
+};
+
 module.exports = {
   listMyCourses,
   getCohortContent,
@@ -193,4 +206,5 @@ module.exports = {
   listMyAssignments,
   submitAssignment,
   getMyAttendance,
+  listMyCertificates,
 };

@@ -1,6 +1,5 @@
 import DashboardLayout from '../dashboard/DashboardLayout';
 
-// Certificates stays disabled — no backing model exists yet.
 const STUDENT_NAV_GROUPS = [
   {
     label: 'Overview',
@@ -14,7 +13,7 @@ const STUDENT_NAV_GROUPS = [
     items: [
       { to: '/student/courses', label: 'My Courses' },
       { to: '/student/assignments', label: 'Assignments' },
-      { to: '/student/certificates', label: 'Certificates', disabled: true },
+      { to: '/student/certificates', label: 'Certificates' },
     ],
   },
 ];

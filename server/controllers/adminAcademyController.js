@@ -8,7 +8,9 @@ const Enrollment = require('../models/Enrollment');
 const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
 const InstructorPayout = require('../models/InstructorPayout');
-const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
+const Certificate = require('../models/Certificate');
+const { uploadImage, uploadFile, deleteFile, keyFromUrl } = require('../utils/upload');
+const { buildCertificatePdf } = require('../utils/certificatePdf');
 
 const COURSE_STATUSES = ['draft', 'published', 'archived'];
 const COHORT_STATUSES = ['upcoming', 'active', 'completed'];
@@ -951,6 +953,87 @@ const payInstructor = async (req, res) => {
   }
 };
 
+// ---------- Certificates (placeholder PDF, generated offline-completion) ----------
+
+// POST /api/admin/academy/certificates — { student_id, cohort_id }. Generates
+// a placeholder completion certificate for a student who has finished a
+// cohort. Idempotent: if one already exists for this student+cohort, returns
+// the existing record instead of generating (and uploading) a duplicate.
+const generateCertificate = async (req, res) => {
+  try {
+    const { student_id, cohort_id } = req.body;
+    if (!student_id || !cohort_id) {
+      return res.status(400).json({ message: 'student_id and cohort_id are required' });
+    }
+
+    const existing = await Certificate.findOne({ student_id, cohort_id })
+      .populate('student_id', 'name email')
+      .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } });
+    if (existing) {
+      return res.status(200).json({ certificate: existing });
+    }
+
+    const enrollment = await Enrollment.findOne({ student_id, cohort_id });
+    if (!enrollment) {
+      return res.status(400).json({ message: 'This student is not enrolled in that cohort' });
+    }
+    if (enrollment.status !== 'completed') {
+      return res.status(400).json({ message: 'This enrollment must be marked "completed" before a certificate can be generated' });
+    }
+
+    const student = await User.findOne({ _id: student_id, role: 'student' });
+    const cohort = await Cohort.findById(cohort_id).populate('course_id', 'title');
+    if (!student || !cohort) {
+      return res.status(404).json({ message: 'Student or cohort not found' });
+    }
+
+    const issued_at = new Date();
+    const pdfBuffer = await buildCertificatePdf({
+      studentName: student.name,
+      courseTitle: cohort.course_id?.title || cohort.name,
+      issuedAt: issued_at,
+    });
+    const { url } = await uploadFile(
+      { originalname: `certificate-${student._id}-${cohort._id}.pdf`, buffer: pdfBuffer, mimetype: 'application/pdf' },
+      'certificates'
+    );
+
+    const certificate = await Certificate.create({
+      student_id,
+      cohort_id,
+      issued_at,
+      certificate_url: url,
+    });
+
+    const populated = await Certificate.findById(certificate._id)
+      .populate('student_id', 'name email')
+      .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } });
+
+    res.status(201).json({ certificate: populated });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to generate certificate', error: err.message });
+  }
+};
+
+// GET /api/admin/academy/certificates?cohort_id=...&student_id=...
+const listCertificates = async (req, res) => {
+  try {
+    const { cohort_id, student_id } = req.query;
+    const filter = {};
+    if (cohort_id) filter.cohort_id = cohort_id;
+    if (student_id) filter.student_id = student_id;
+
+    const certificates = await Certificate.find(filter)
+      .populate('student_id', 'name email')
+      .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } })
+      .sort({ issued_at: -1 });
+
+    res.json({ certificates });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load certificates', error: err.message });
+  }
+};
+
 module.exports = {
   listCourses,
   getCourse,
@@ -980,4 +1063,6 @@ module.exports = {
   deletePayment,
   listPayouts,
   payInstructor,
+  generateCertificate,
+  listCertificates,
 };

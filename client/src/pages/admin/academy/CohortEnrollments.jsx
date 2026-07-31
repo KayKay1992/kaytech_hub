@@ -14,9 +14,11 @@ export default function CohortEnrollments() {
   const [cohort, setCohort] = useState(null);
   const [enrollments, setEnrollments] = useState([]);
   const [students, setStudents] = useState([]);
+  const [certificates, setCertificates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [generatingId, setGeneratingId] = useState(null);
 
   const [enrolling, setEnrolling] = useState(false);
   const [pickedStudentId, setPickedStudentId] = useState('');
@@ -27,14 +29,16 @@ export default function CohortEnrollments() {
     setLoading(true);
     setError('');
     try {
-      const [cohortRes, enrollmentsRes, studentsRes] = await Promise.all([
+      const [cohortRes, enrollmentsRes, studentsRes, certificatesRes] = await Promise.all([
         api.get(`/admin/academy/cohorts/${id}`),
         api.get('/admin/academy/enrollments', { params: { cohort_id: id } }),
         api.get('/users', { params: { role: 'student' } }),
+        api.get('/admin/academy/certificates', { params: { cohort_id: id } }),
       ]);
       setCohort(cohortRes.data.cohort);
       setEnrollments(enrollmentsRes.data.enrollments);
       setStudents(studentsRes.data.users);
+      setCertificates(certificatesRes.data.certificates);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load enrollments');
     } finally {
@@ -83,6 +87,22 @@ export default function CohortEnrollments() {
     }
   };
 
+  const generateCertificate = async (studentId) => {
+    setGeneratingId(studentId);
+    setError('');
+    try {
+      const res = await api.post('/admin/academy/certificates', { student_id: studentId, cohort_id: id });
+      setCertificates((prev) => {
+        const withoutThis = prev.filter((c) => c._id !== res.data.certificate._id);
+        return [...withoutThis, res.data.certificate];
+      });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to generate certificate');
+    } finally {
+      setGeneratingId(null);
+    }
+  };
+
   const enrolledStudentIds = new Set(enrollments.map((e) => e.student_id?._id));
   const availableStudents = students.filter((s) => !enrolledStudentIds.has(s._id));
 
@@ -120,11 +140,14 @@ export default function CohortEnrollments() {
                 <th className="is-numeric">Balance</th>
                 <th>Payment</th>
                 <th>Enrolled</th>
+                <th>Certificate</th>
               </tr>
             </thead>
             <tbody>
               {enrollments.map((enr) => {
                 const isBusy = busyId === enr._id;
+                const cert = certificates.find((c) => String(c.student_id?._id || c.student_id) === String(enr.student_id?._id));
+                const isGenerating = generatingId === enr.student_id?._id;
                 return (
                   <tr key={enr._id}>
                     <td>{enr.student_id?.name || '—'}<br /><span className="payments-muted">{enr.student_id?.email}</span></td>
@@ -138,6 +161,22 @@ export default function CohortEnrollments() {
                     <td className="is-numeric">{money(enr.balance_remaining)}</td>
                     <td><PaymentStatusBadge status={enr.payment_status} /></td>
                     <td className="payments-date">{new Date(enr.enrolled_at).toLocaleDateString()}</td>
+                    <td>
+                      {cert ? (
+                        <a href={cert.certificate_url} target="_blank" rel="noreferrer" className="btn btn--ghost">View Certificate</a>
+                      ) : enr.status === 'completed' ? (
+                        <button
+                          type="button"
+                          className="btn btn--primary"
+                          disabled={isGenerating}
+                          onClick={() => generateCertificate(enr.student_id?._id)}
+                        >
+                          {isGenerating ? 'Generating...' : 'Generate Certificate'}
+                        </button>
+                      ) : (
+                        <span className="payments-muted">Mark completed first</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}

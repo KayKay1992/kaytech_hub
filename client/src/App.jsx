@@ -38,6 +38,7 @@ import StudentNotifications from './pages/student/Notifications';
 import StudentCourses from './pages/student/Courses';
 import StudentCourseContent from './pages/student/CourseContent';
 import StudentAssignments from './pages/student/Assignments';
+import StudentCertificates from './pages/student/Certificates';
 import InstructorDashboard from './pages/instructor/Dashboard';
 import InstructorNotifications from './pages/instructor/Notifications';
 import AdminCourses from './pages/admin/academy/Courses';
@@ -89,6 +90,7 @@ function App() {
           <Route path="courses" element={<StudentCourses />} />
           <Route path="courses/:cohortId" element={<StudentCourseContent />} />
           <Route path="assignments" element={<StudentAssignments />} />
+          <Route path="certificates" element={<StudentCertificates />} />
         </Route>
       </Route>
 
