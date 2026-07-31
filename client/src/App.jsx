@@ -37,6 +37,7 @@ import StudentDashboard from './pages/student/Dashboard';
 import StudentNotifications from './pages/student/Notifications';
 import StudentCourses from './pages/student/Courses';
 import StudentCourseContent from './pages/student/CourseContent';
+import StudentAssignments from './pages/student/Assignments';
 import InstructorDashboard from './pages/instructor/Dashboard';
 import InstructorNotifications from './pages/instructor/Notifications';
 import AdminCourses from './pages/admin/academy/Courses';
@@ -49,6 +50,8 @@ import AdminRegistrations from './pages/admin/academy/Registrations';
 import AdminCohortEnrollments from './pages/admin/academy/CohortEnrollments';
 import InstructorCourses from './pages/instructor/academy/Courses';
 import InstructorCourseContent from './pages/instructor/academy/CourseContent';
+import InstructorAssignments from './pages/instructor/academy/Assignments';
+import InstructorAssignmentSubmissions from './pages/instructor/academy/AssignmentSubmissions';
 
 function App() {
   return (
@@ -80,6 +83,7 @@ function App() {
           <Route path="notifications" element={<StudentNotifications />} />
           <Route path="courses" element={<StudentCourses />} />
           <Route path="courses/:cohortId" element={<StudentCourseContent />} />
+          <Route path="assignments" element={<StudentAssignments />} />
         </Route>
       </Route>
 
@@ -89,6 +93,8 @@ function App() {
           <Route path="notifications" element={<InstructorNotifications />} />
           <Route path="academy/courses" element={<InstructorCourses />} />
           <Route path="academy/courses/:courseId" element={<InstructorCourseContent />} />
+          <Route path="academy/assignments" element={<InstructorAssignments />} />
+          <Route path="academy/assignments/:assignmentId/submissions" element={<InstructorAssignmentSubmissions />} />
         </Route>
       </Route>
 

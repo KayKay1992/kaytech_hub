@@ -2,6 +2,9 @@ const Enrollment = require('../models/Enrollment');
 const Cohort = require('../models/Cohort');
 const Module = require('../models/Module');
 const Lesson = require('../models/Lesson');
+const Assignment = require('../models/Assignment');
+const Submission = require('../models/Submission');
+const { uploadFile } = require('../utils/upload');
 
 // GET /api/student/courses — every cohort I'm enrolled in, with live
 // completion progress against that course's approved lessons
@@ -102,4 +105,68 @@ const toggleLessonComplete = async (req, res) => {
   }
 };
 
-module.exports = { listMyCourses, getCohortContent, toggleLessonComplete };
+// GET /api/student/assignments — assignments across every cohort I'm
+// actively enrolled in, each with my own submission (if any) attached
+const listMyAssignments = async (req, res) => {
+  try {
+    const enrollments = await Enrollment.find({ student_id: req.user._id })
+      .populate({ path: 'cohort_id', populate: { path: 'course_id', select: 'title' } });
+
+    const cohortIds = enrollments.map((e) => e.cohort_id?._id).filter(Boolean);
+
+    const assignments = await Assignment.find({ cohort_id: { $in: cohortIds } })
+      .populate('lesson_id', 'title')
+      .sort({ due_date: 1 });
+
+    const submissions = await Submission.find({
+      assignment_id: { $in: assignments.map((a) => a._id) },
+      student_id: req.user._id,
+    });
+    const submissionByAssignmentId = new Map(submissions.map((s) => [String(s.assignment_id), s]));
+    const cohortById = new Map(enrollments.map((e) => [String(e.cohort_id?._id), e.cohort_id]));
+
+    const withCohortAndSubmission = assignments.map((a) => ({
+      ...a.toObject(),
+      cohort_id: cohortById.get(String(a.cohort_id)) || a.cohort_id,
+      submission: submissionByAssignmentId.get(String(a._id)) || null,
+    }));
+
+    res.json({ assignments: withCohortAndSubmission });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load assignments', error: err.message });
+  }
+};
+
+// POST /api/student/assignments/:id/submit — multipart: file
+// Resubmitting replaces the file and clears any previous grade.
+const submitAssignment = async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+
+    const enrollment = await Enrollment.findOne({ student_id: req.user._id, cohort_id: assignment.cohort_id });
+    if (!enrollment) {
+      return res.status(403).json({ message: 'You are not enrolled in this cohort' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'A solution file is required' });
+    }
+
+    const result = await uploadFile(req.file, 'assignment-submissions');
+
+    const submission = await Submission.findOneAndUpdate(
+      { assignment_id: assignment._id, student_id: req.user._id },
+      { file_url: result.url, submitted_at: new Date(), score: null, feedback: '' },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+
+    res.status(201).json({ submission });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to submit assignment', error: err.message });
+  }
+};
+
+module.exports = { listMyCourses, getCohortContent, toggleLessonComplete, listMyAssignments, submitAssignment };

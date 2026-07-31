@@ -8,6 +8,13 @@ const {
   createLesson,
   updateLesson,
   deleteLesson,
+  listMyCohorts,
+  listCohortAssignments,
+  createAssignment,
+  updateAssignment,
+  deleteAssignment,
+  listAssignmentSubmissions,
+  gradeSubmission,
 } = require('../controllers/instructorAcademyController');
 const { protect, authorize } = require('../middleware/auth');
 const { fileUploadMiddleware } = require('../utils/upload');
@@ -31,5 +38,15 @@ const lessonUpload = fileUploadMiddleware.fields([
 router.post('/lessons', lessonUpload, createLesson);
 router.patch('/lessons/:id', lessonUpload, updateLesson);
 router.delete('/lessons/:id', deleteLesson);
+
+router.get('/cohorts', listMyCohorts);
+router.get('/cohorts/:cohortId/assignments', listCohortAssignments);
+
+router.post('/assignments', createAssignment);
+router.patch('/assignments/:id', updateAssignment);
+router.delete('/assignments/:id', deleteAssignment);
+router.get('/assignments/:id/submissions', listAssignmentSubmissions);
+
+router.patch('/submissions/:id/grade', gradeSubmission);
 
 module.exports = router;

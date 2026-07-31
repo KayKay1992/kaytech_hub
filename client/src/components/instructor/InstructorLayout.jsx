@@ -1,6 +1,6 @@
 import DashboardLayout from '../dashboard/DashboardLayout';
 
-// Academy items are placeholders until that module is built.
+// Students list is a placeholder until that module is built.
 const INSTRUCTOR_NAV_GROUPS = [
   {
     label: 'Overview',
@@ -13,8 +13,8 @@ const INSTRUCTOR_NAV_GROUPS = [
     label: 'Academy',
     items: [
       { to: '/instructor/academy/courses', label: 'My Courses' },
+      { to: '/instructor/academy/assignments', label: 'Assignments' },
       { to: '/instructor/students', label: 'Students', disabled: true },
-      { to: '/instructor/grading', label: 'Grading', disabled: true },
     ],
   },
 ];

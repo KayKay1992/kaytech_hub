@@ -1,6 +1,6 @@
 import DashboardLayout from '../dashboard/DashboardLayout';
 
-// Assignments/Certificates stay disabled — no backing model exists yet.
+// Certificates stays disabled — no backing model exists yet.
 const STUDENT_NAV_GROUPS = [
   {
     label: 'Overview',
@@ -13,7 +13,7 @@ const STUDENT_NAV_GROUPS = [
     label: 'Academy',
     items: [
       { to: '/student/courses', label: 'My Courses' },
-      { to: '/student/assignments', label: 'Assignments', disabled: true },
+      { to: '/student/assignments', label: 'Assignments' },
       { to: '/student/certificates', label: 'Certificates', disabled: true },
     ],
   },

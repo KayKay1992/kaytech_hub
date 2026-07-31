@@ -1250,6 +1250,7 @@ a:hover { color: var(--color-amber); }
 .academy-status--pending { background: color-mix(in srgb, var(--color-amber) 18%, transparent); color: var(--color-navy); }
 .academy-status--approved { background: color-mix(in srgb, var(--color-teal) 20%, transparent); color: var(--color-navy); }
 .academy-status--rejected { background: color-mix(in srgb, var(--color-danger) 12%, transparent); color: var(--color-danger); }
+.academy-status--neutral { background: color-mix(in srgb, var(--color-slate) 15%, transparent); color: var(--color-slate); }
 
 .academy-module {
   background: var(--color-surface);
@@ -1293,6 +1294,187 @@ a:hover { color: var(--color-amber); }
   margin-bottom: 8px;
 }
 .academy-resource-row input { flex: 1; }
+
+/* Assignments — instructor cohort/assignment cards, student assignment
+   cards, and the grading view all share this visual language: same card
+   lift + amber glow as .card/.course-card, mono eyebrow tags, pill badges. */
+.academy-assignment-meta {
+  margin: 6px 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.assignment-cohort-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.assignment-cohort-picker button {
+  padding: 9px 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+.assignment-cohort-picker button:hover { border-color: var(--color-amber); color: var(--color-navy); }
+.assignment-cohort-picker button.is-active { background: var(--color-navy); color: #fff; border-color: var(--color-navy); }
+
+.assignment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 22px;
+  margin-top: 4px;
+}
+.assignment-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.assignment-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-glow);
+  border-color: var(--color-amber);
+}
+.assignment-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.assignment-card__title { margin: 0; font-size: 1.08rem; line-height: 1.35; }
+.assignment-card__lesson-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+.assignment-card__description {
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  margin: 0;
+  line-height: 1.5;
+}
+.assignment-card__due {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  width: fit-content;
+}
+.assignment-card__due--overdue { background: color-mix(in srgb, var(--color-danger) 12%, transparent); color: var(--color-danger); }
+.assignment-card__footer {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Feedback callout — the amber-accented panel students see once graded */
+.assignment-feedback {
+  background: color-mix(in srgb, var(--color-amber) 10%, transparent);
+  border-left: 3px solid var(--color-amber);
+  padding: 10px 14px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.88rem;
+  color: var(--color-navy);
+  margin: 0;
+}
+.assignment-locked-note {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 0;
+}
+
+/* Instructor grading view */
+.submission-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.submission-card--graded { border-color: color-mix(in srgb, var(--color-teal) 40%, var(--color-border)); }
+.submission-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.submission-card__avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--color-navy);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+.submission-card__student { flex: 1; min-width: 160px; }
+.submission-card__student strong { display: block; font-size: 0.98rem; }
+.submission-card__student span { color: var(--color-text-muted); font-size: 0.85rem; }
+
+.academy-grade-form {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border);
+}
+.academy-grade-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.academy-grade-form input,
+.academy-grade-form textarea {
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-btn);
+  font-size: 0.92rem;
+  font-family: inherit;
+  background: var(--color-bg);
+  color: var(--color-text);
+  resize: vertical;
+}
+.academy-grade-form input[type="number"] { width: 90px; }
+.academy-grade-form textarea { flex: 1; min-width: 220px; }
+.academy-grade-form .btn { align-self: flex-end; }
 
 /* Enrollment completion progress — student "My Courses" cards, course
    content viewer, and dashboard cohort summaries all share this. */

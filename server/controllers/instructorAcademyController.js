@@ -2,12 +2,19 @@ const Course = require('../models/Course');
 const Cohort = require('../models/Cohort');
 const Module = require('../models/Module');
 const Lesson = require('../models/Lesson');
+const Assignment = require('../models/Assignment');
+const Submission = require('../models/Submission');
 const { uploadFile } = require('../utils/upload');
 
 // An instructor may only create/manage content for a course they're
 // assigned to teach via at least one Cohort.
 const isAssignedToCourse = (instructorId, courseId) =>
   Cohort.exists({ instructor_id: instructorId, course_id: courseId });
+
+// Assignments are cohort-specific, so the check is against that exact
+// cohort rather than "any cohort of this course".
+const isAssignedToCohort = (instructorId, cohortId) =>
+  Cohort.exists({ _id: cohortId, instructor_id: instructorId });
 
 // Parses the `resource_links` JSON string (link-type resources) and combines
 // it with any uploaded `resource_files` (file-type resources, labeled by
@@ -265,6 +272,157 @@ const deleteLesson = async (req, res) => {
   }
 };
 
+// GET /api/instructor/cohorts — cohorts I teach, for the assignment cohort picker
+const listMyCohorts = async (req, res) => {
+  try {
+    const cohorts = await Cohort.find({ instructor_id: req.user._id })
+      .populate('course_id', 'title')
+      .sort({ start_date: -1 });
+    res.json({ cohorts });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load your cohorts', error: err.message });
+  }
+};
+
+// GET /api/instructor/cohorts/:cohortId/assignments
+const listCohortAssignments = async (req, res) => {
+  try {
+    const assigned = await isAssignedToCohort(req.user._id, req.params.cohortId);
+    if (!assigned) {
+      return res.status(403).json({ message: 'You are not assigned to this cohort' });
+    }
+
+    const assignments = await Assignment.find({ cohort_id: req.params.cohortId })
+      .populate('lesson_id', 'title')
+      .sort({ due_date: 1 });
+
+    res.json({ assignments });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load assignments', error: err.message });
+  }
+};
+
+// POST /api/instructor/assignments
+const createAssignment = async (req, res) => {
+  try {
+    const { cohort_id, lesson_id, title, description, due_date } = req.body;
+    if (!cohort_id || !title || !due_date) {
+      return res.status(400).json({ message: 'cohort_id, title, and due_date are required' });
+    }
+
+    const assigned = await isAssignedToCohort(req.user._id, cohort_id);
+    if (!assigned) {
+      return res.status(403).json({ message: 'You are not assigned to this cohort' });
+    }
+
+    const assignment = await Assignment.create({
+      cohort_id,
+      lesson_id: lesson_id || null,
+      title,
+      description: description || '',
+      due_date,
+      created_by: req.user._id,
+    });
+
+    res.status(201).json({ assignment });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to create assignment', error: err.message });
+  }
+};
+
+// PATCH /api/instructor/assignments/:id — creator only
+const updateAssignment = async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+    if (String(assignment.created_by) !== String(req.user._id)) {
+      return res.status(403).json({ message: 'Only the instructor who created this assignment can edit it' });
+    }
+
+    const { lesson_id, title, description, due_date } = req.body;
+    if (title !== undefined) assignment.title = title;
+    if (description !== undefined) assignment.description = description;
+    if (due_date !== undefined) assignment.due_date = due_date;
+    if (lesson_id !== undefined) assignment.lesson_id = lesson_id || null;
+
+    await assignment.save();
+    res.json({ assignment });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update assignment', error: err.message });
+  }
+};
+
+// DELETE /api/instructor/assignments/:id — creator only; cascades to submissions
+const deleteAssignment = async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+    if (String(assignment.created_by) !== String(req.user._id)) {
+      return res.status(403).json({ message: 'Only the instructor who created this assignment can delete it' });
+    }
+
+    await Submission.deleteMany({ assignment_id: assignment._id });
+    await assignment.deleteOne();
+
+    res.json({ message: 'Assignment deleted', id: assignment._id });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete assignment', error: err.message });
+  }
+};
+
+// GET /api/instructor/assignments/:id/submissions — creator only
+const listAssignmentSubmissions = async (req, res) => {
+  try {
+    const assignment = await Assignment.findById(req.params.id);
+    if (!assignment) {
+      return res.status(404).json({ message: 'Assignment not found' });
+    }
+    if (String(assignment.created_by) !== String(req.user._id)) {
+      return res.status(403).json({ message: 'Only the instructor who created this assignment can view its submissions' });
+    }
+
+    const submissions = await Submission.find({ assignment_id: assignment._id })
+      .populate('student_id', 'name email')
+      .sort({ submitted_at: -1 });
+
+    res.json({ assignment, submissions });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load submissions', error: err.message });
+  }
+};
+
+// PATCH /api/instructor/submissions/:id/grade — { score, feedback }
+const gradeSubmission = async (req, res) => {
+  try {
+    const submission = await Submission.findById(req.params.id).populate('assignment_id');
+    if (!submission) {
+      return res.status(404).json({ message: 'Submission not found' });
+    }
+    if (String(submission.assignment_id.created_by) !== String(req.user._id)) {
+      return res.status(403).json({ message: 'Only the instructor who created this assignment can grade it' });
+    }
+
+    const { score, feedback } = req.body;
+    if (score !== undefined && score !== '') {
+      const numericScore = Number(score);
+      if (Number.isNaN(numericScore) || numericScore < 0) {
+        return res.status(400).json({ message: 'Score must be a non-negative number' });
+      }
+      submission.score = numericScore;
+    }
+    if (feedback !== undefined) submission.feedback = feedback;
+
+    await submission.save();
+    res.json({ submission });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to grade submission', error: err.message });
+  }
+};
+
 module.exports = {
   listMyCourses,
   getCourseContent,
@@ -274,4 +432,11 @@ module.exports = {
   createLesson,
   updateLesson,
   deleteLesson,
+  listMyCohorts,
+  listCohortAssignments,
+  createAssignment,
+  updateAssignment,
+  deleteAssignment,
+  listAssignmentSubmissions,
+  gradeSubmission,
 };
