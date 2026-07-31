@@ -4,13 +4,15 @@ const Module = require('../models/Module');
 const Lesson = require('../models/Lesson');
 const User = require('../models/User');
 const CourseRegistration = require('../models/CourseRegistration');
+const Enrollment = require('../models/Enrollment');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
 
 const COURSE_STATUSES = ['draft', 'published', 'archived'];
 const COHORT_STATUSES = ['upcoming', 'active', 'completed'];
 const REVIEW_ACTIONS = ['approve', 'reject'];
-const REGISTRATION_STATUSES = ['new', 'contacted', 'confirmed', 'declined'];
+const REGISTRATION_STATUSES = ['new', 'contacted', 'confirmed', 'declined', 'converted'];
 const PAYMENT_STATUSES = ['pending', 'paid'];
+const ENROLLMENT_STATUSES = ['active', 'completed', 'dropped'];
 
 // Nests lessons under their module — shared by the admin and instructor
 // "course content" tree views.
@@ -399,6 +401,144 @@ const updateRegistration = async (req, res) => {
   }
 };
 
+// PATCH /api/admin/academy/registrations/:id/convert — { cohort_id }.
+// Only works once the registrant already has a student account (created via
+// invite code, matched by email) — this is the step that connects the public
+// "interest" registration to a real Enrollment instead of the two staying
+// disconnected lists.
+const convertRegistration = async (req, res) => {
+  try {
+    const { cohort_id } = req.body;
+    if (!cohort_id) {
+      return res.status(400).json({ message: 'cohort_id is required' });
+    }
+
+    const registration = await CourseRegistration.findById(req.params.id);
+    if (!registration) {
+      return res.status(404).json({ message: 'Registration not found' });
+    }
+    if (registration.status === 'converted') {
+      return res.status(400).json({ message: 'This registration has already been converted' });
+    }
+
+    const cohort = await Cohort.findById(cohort_id);
+    if (!cohort) {
+      return res.status(404).json({ message: 'Cohort not found' });
+    }
+
+    const student = await User.findOne({ email: registration.email, role: 'student' });
+    if (!student) {
+      return res.status(400).json({ message: 'No student account found for this email yet — generate an invite code and confirm they have signed up first' });
+    }
+
+    const existing = await Enrollment.findOne({ student_id: student._id, cohort_id });
+    if (existing) {
+      return res.status(400).json({ message: 'This student is already enrolled in this cohort' });
+    }
+
+    const enrollment = await Enrollment.create({
+      student_id: student._id,
+      cohort_id,
+      payment_status: registration.payment_status,
+    });
+
+    registration.status = 'converted';
+    await registration.save();
+
+    res.status(201).json({ enrollment, registration });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to convert registration', error: err.message });
+  }
+};
+
+// ---------- Enrollments ----------
+
+// GET /api/admin/academy/enrollments?cohort_id=...
+const listEnrollments = async (req, res) => {
+  try {
+    const { cohort_id } = req.query;
+    const filter = {};
+    if (cohort_id) filter.cohort_id = cohort_id;
+
+    const enrollments = await Enrollment.find(filter)
+      .populate('student_id', 'name email')
+      .populate({
+        path: 'cohort_id',
+        select: 'name course_id',
+        populate: { path: 'course_id', select: 'title' },
+      })
+      .sort({ enrolled_at: -1 });
+
+    res.json({ enrollments });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load enrollments', error: err.message });
+  }
+};
+
+// POST /api/admin/academy/enrollments — enroll an existing student account
+// into a specific cohort
+const createEnrollment = async (req, res) => {
+  try {
+    const { student_id, cohort_id, payment_status } = req.body;
+    if (!student_id || !cohort_id) {
+      return res.status(400).json({ message: 'student_id and cohort_id are required' });
+    }
+    if (payment_status && !PAYMENT_STATUSES.includes(payment_status)) {
+      return res.status(400).json({ message: `Payment status must be one of: ${PAYMENT_STATUSES.join(', ')}` });
+    }
+
+    const student = await User.findOne({ _id: student_id, role: 'student' });
+    if (!student) {
+      return res.status(400).json({ message: 'student_id must reference a user with role "student"' });
+    }
+    const cohort = await Cohort.findById(cohort_id);
+    if (!cohort) {
+      return res.status(404).json({ message: 'Cohort not found' });
+    }
+
+    const existing = await Enrollment.findOne({ student_id, cohort_id });
+    if (existing) {
+      return res.status(400).json({ message: 'This student is already enrolled in this cohort' });
+    }
+
+    const enrollment = await Enrollment.create({
+      student_id,
+      cohort_id,
+      payment_status: payment_status || 'pending',
+    });
+
+    res.status(201).json({ enrollment });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to create enrollment', error: err.message });
+  }
+};
+
+// PATCH /api/admin/academy/enrollments/:id — update status and/or payment_status
+const updateEnrollment = async (req, res) => {
+  try {
+    const { status, payment_status } = req.body;
+    if (status && !ENROLLMENT_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `Status must be one of: ${ENROLLMENT_STATUSES.join(', ')}` });
+    }
+    if (payment_status && !PAYMENT_STATUSES.includes(payment_status)) {
+      return res.status(400).json({ message: `Payment status must be one of: ${PAYMENT_STATUSES.join(', ')}` });
+    }
+
+    const enrollment = await Enrollment.findById(req.params.id);
+    if (!enrollment) {
+      return res.status(404).json({ message: 'Enrollment not found' });
+    }
+
+    if (status !== undefined) enrollment.status = status;
+    if (payment_status !== undefined) enrollment.payment_status = payment_status;
+
+    await enrollment.save();
+    res.json({ enrollment });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update enrollment', error: err.message });
+  }
+};
+
 module.exports = {
   listCourses,
   getCourse,
@@ -417,4 +557,8 @@ module.exports = {
   deleteLesson,
   listRegistrations,
   updateRegistration,
+  convertRegistration,
+  listEnrollments,
+  createEnrollment,
+  updateEnrollment,
 };

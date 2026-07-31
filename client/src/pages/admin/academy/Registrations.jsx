@@ -17,6 +17,12 @@ export default function AdminRegistrations() {
   const [busyId, setBusyId] = useState(null);
   const [viewing, setViewing] = useState(null);
 
+  const [converting, setConverting] = useState(null); // registration object
+  const [cohortOptions, setCohortOptions] = useState([]);
+  const [pickedCohortId, setPickedCohortId] = useState('');
+  const [convertError, setConvertError] = useState('');
+  const [convertSaving, setConvertSaving] = useState(false);
+
   const load = async () => {
     setLoading(true);
     setError('');
@@ -47,6 +53,37 @@ export default function AdminRegistrations() {
       setError(err.response?.data?.message || 'Failed to update registration');
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const openConvert = async (registration) => {
+    setConverting(registration);
+    setConvertError('');
+    setPickedCohortId(registration.cohort_id?._id || '');
+    try {
+      const res = await api.get('/admin/academy/cohorts', { params: { course_id: registration.course_id?._id } });
+      setCohortOptions(res.data.cohorts);
+    } catch {
+      setCohortOptions([]);
+    }
+  };
+
+  const handleConvert = async (e) => {
+    e.preventDefault();
+    setConvertError('');
+    if (!pickedCohortId) {
+      setConvertError('Please select a cohort.');
+      return;
+    }
+    setConvertSaving(true);
+    try {
+      await api.patch(`/admin/academy/registrations/${converting._id}/convert`, { cohort_id: pickedCohortId });
+      setRegistrations((prev) => prev.map((r) => (r._id === converting._id ? { ...r, status: 'converted' } : r)));
+      setConverting(null);
+    } catch (err) {
+      setConvertError(err.response?.data?.message || 'Failed to convert registration');
+    } finally {
+      setConvertSaving(false);
     }
   };
 
@@ -88,6 +125,7 @@ export default function AdminRegistrations() {
             <tbody>
               {registrations.map((r) => {
                 const isBusy = busyId === r._id;
+                const isConverted = r.status === 'converted';
                 return (
                   <tr key={r._id}>
                     <td>{r.full_name}</td>
@@ -100,13 +138,20 @@ export default function AdminRegistrations() {
                       </select>
                     </td>
                     <td>
-                      <select value={r.status} disabled={isBusy} onChange={(e) => updateField(r._id, 'status', e.target.value)}>
-                        {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-                      </select>
+                      {isConverted ? (
+                        <span className="invite-status invite-status--unused">converted</span>
+                      ) : (
+                        <select value={r.status} disabled={isBusy} onChange={(e) => updateField(r._id, 'status', e.target.value)}>
+                          {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      )}
                     </td>
                     <td>{new Date(r.submitted_at).toLocaleDateString()}</td>
-                    <td>
+                    <td className="admin-table__actions">
                       <button type="button" className="btn btn--ghost" onClick={() => setViewing(r)}>View</button>
+                      {!isConverted && (
+                        <button type="button" className="btn btn--ghost" onClick={() => openConvert(r)}>Convert</button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -124,6 +169,31 @@ export default function AdminRegistrations() {
           <p><strong>Experience level:</strong> {viewing.experience_level}</p>
           <p><strong>Reason for joining:</strong> {viewing.reason}</p>
           {viewing.how_heard && <p><strong>How they heard about us:</strong> {viewing.how_heard}</p>}
+        </Modal>
+      )}
+
+      {converting && (
+        <Modal title={`Convert: ${converting.full_name}`} onClose={() => setConverting(null)}>
+          <p className="modal__meta">
+            Requires a student account already signed up with {converting.email} via invite code.
+          </p>
+          <form className="auth-form" onSubmit={handleConvert}>
+            {convertError && <p className="form-error">{convertError}</p>}
+
+            <label>
+              Cohort
+              <select value={pickedCohortId} onChange={(e) => setPickedCohortId(e.target.value)} required>
+                <option value="">Select a cohort...</option>
+                {cohortOptions.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name} ({new Date(c.start_date).toLocaleDateString()})</option>
+                ))}
+              </select>
+            </label>
+
+            <button type="submit" className="btn btn--primary btn--full" disabled={convertSaving}>
+              {convertSaving ? 'Converting...' : 'Create Enrollment'}
+            </button>
+          </form>
         </Modal>
       )}
     </div>

@@ -57,9 +57,11 @@ const courseRegistrationSchema = new mongoose.Schema({
     enum: ['pending', 'paid'],
     default: 'pending',
   },
+  // 'converted' is set automatically once admin creates the matching
+  // Enrollment from this registration — not meant to be picked by hand.
   status: {
     type: String,
-    enum: ['new', 'contacted', 'confirmed', 'declined'],
+    enum: ['new', 'contacted', 'confirmed', 'declined', 'converted'],
     default: 'new',
   },
 }, {

@@ -84,6 +84,7 @@ export default function AdminCohorts() {
                   <td><span className={`invite-status ${STATUS_CLASSES[cohort.status] || ''}`}>{cohort.status}</span></td>
                   <td className="admin-table__actions">
                     <Link to={`/admin/academy/cohorts/${cohort._id}/edit`} className="btn btn--ghost">Edit</Link>
+                    <Link to={`/admin/academy/cohorts/${cohort._id}/enrollments`} className="btn btn--ghost">Enrollments</Link>
                   </td>
                 </tr>
               ))}

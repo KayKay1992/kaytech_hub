@@ -17,6 +17,10 @@ const {
   deleteLesson,
   listRegistrations,
   updateRegistration,
+  convertRegistration,
+  listEnrollments,
+  createEnrollment,
+  updateEnrollment,
 } = require('../controllers/adminAcademyController');
 const { protect, authorize } = require('../middleware/auth');
 const { imageUploadMiddleware } = require('../utils/upload');
@@ -46,5 +50,10 @@ router.delete('/academy/lessons/:id', deleteLesson);
 
 router.get('/academy/registrations', listRegistrations);
 router.patch('/academy/registrations/:id', updateRegistration);
+router.patch('/academy/registrations/:id/convert', convertRegistration);
+
+router.get('/academy/enrollments', listEnrollments);
+router.post('/academy/enrollments', createEnrollment);
+router.patch('/academy/enrollments/:id', updateEnrollment);
 
 module.exports = router;

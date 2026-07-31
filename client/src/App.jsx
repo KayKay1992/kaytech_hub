@@ -35,6 +35,8 @@ import AdminScholarshipApplications from './pages/admin/ScholarshipApplications'
 import AdminNotifications from './pages/admin/Notifications';
 import StudentDashboard from './pages/student/Dashboard';
 import StudentNotifications from './pages/student/Notifications';
+import StudentCourses from './pages/student/Courses';
+import StudentCourseContent from './pages/student/CourseContent';
 import InstructorDashboard from './pages/instructor/Dashboard';
 import InstructorNotifications from './pages/instructor/Notifications';
 import AdminCourses from './pages/admin/academy/Courses';
@@ -44,6 +46,7 @@ import AdminCohorts from './pages/admin/academy/Cohorts';
 import AdminCohortForm from './pages/admin/academy/CohortForm';
 import AdminApprovals from './pages/admin/academy/Approvals';
 import AdminRegistrations from './pages/admin/academy/Registrations';
+import AdminCohortEnrollments from './pages/admin/academy/CohortEnrollments';
 import InstructorCourses from './pages/instructor/academy/Courses';
 import InstructorCourseContent from './pages/instructor/academy/CourseContent';
 
@@ -75,6 +78,8 @@ function App() {
         <Route path="/student" element={<StudentLayout />}>
           <Route index element={<StudentDashboard />} />
           <Route path="notifications" element={<StudentNotifications />} />
+          <Route path="courses" element={<StudentCourses />} />
+          <Route path="courses/:cohortId" element={<StudentCourseContent />} />
         </Route>
       </Route>
 
@@ -108,6 +113,7 @@ function App() {
           <Route path="academy/cohorts" element={<AdminCohorts />} />
           <Route path="academy/cohorts/new" element={<AdminCohortForm />} />
           <Route path="academy/cohorts/:id/edit" element={<AdminCohortForm />} />
+          <Route path="academy/cohorts/:id/enrollments" element={<AdminCohortEnrollments />} />
           <Route path="academy/approvals" element={<AdminApprovals />} />
           <Route path="academy/registrations" element={<AdminRegistrations />} />
         </Route>

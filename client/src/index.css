@@ -1294,6 +1294,127 @@ a:hover { color: var(--color-amber); }
 }
 .academy-resource-row input { flex: 1; }
 
+/* Enrollment completion progress — student "My Courses" cards, course
+   content viewer, and dashboard cohort summaries all share this. */
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.progress-bar__fill {
+  height: 100%;
+  background: var(--color-amber);
+  border-radius: var(--radius-pill);
+  transition: width 0.4s ease;
+}
+
+/* Student dashboard hero — dark Ink Navy panel with an animated completion
+   ring, same circuit-grid/glow language as .scholarship-promo and
+   .form-panel, personalized with a time-of-day greeting. */
+.dashboard-hero {
+  position: relative;
+  border-radius: var(--radius);
+  padding: 44px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 36px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 176, 32, 0.12), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(45, 212, 191, 0.08), transparent 45%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0px, rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0px, rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent 40px),
+    var(--color-navy);
+  box-shadow: 0 24px 60px rgba(16, 20, 43, 0.3);
+}
+.dashboard-hero__glow { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; }
+.dashboard-hero__glow--one { width: 220px; height: 220px; background: rgba(255, 176, 32, 0.16); top: -60px; left: -40px; }
+.dashboard-hero__glow--two { width: 240px; height: 240px; background: rgba(45, 212, 191, 0.1); bottom: -70px; right: 10%; }
+.dashboard-hero__content { position: relative; z-index: 1; max-width: 520px; display: flex; flex-direction: column; gap: 12px; }
+.dashboard-hero__title { color: #fff; font-size: 2rem; margin: 0; }
+.dashboard-hero__subtitle { color: rgba(255, 255, 255, 0.72); margin: 0; }
+.dashboard-hero__pills { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.dashboard-hero__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.82rem;
+}
+.dashboard-hero__pill strong { color: var(--color-amber); }
+.dashboard-hero__ring-wrap {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.dashboard-hero__ring-caption {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.6);
+}
+.dashboard-ring__track { fill: none; stroke: rgba(255, 255, 255, 0.15); }
+.dashboard-ring__fill {
+  fill: none;
+  stroke: var(--color-amber);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.1s ease-out;
+}
+.dashboard-ring__label {
+  fill: #fff;
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+@media (max-width: 780px) {
+  .dashboard-hero { flex-direction: column; text-align: center; padding: 36px 28px; }
+  .dashboard-hero__content { align-items: center; max-width: 100%; }
+  .dashboard-hero__pills { justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-ring__fill { transition: none; }
+}
+
+/* Dashboard empty states — centered for a full section, inline for a
+   smaller panel like "Assignments Due". */
+.dashboard-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 32px 20px;
+  color: var(--color-text-muted);
+}
+.dashboard-empty-state__icon { font-size: 1.8rem; }
+.dashboard-empty-state--inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  padding: 0;
+}
+.dashboard-empty-state--inline .dashboard-empty-state__icon { font-size: 1.3rem; }
+.dashboard-empty-state--inline p { margin: 0; }
+
 .courses-overview__more {
   display: flex;
   justify-content: center;
