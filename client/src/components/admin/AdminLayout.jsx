@@ -5,9 +5,11 @@ import {
   Briefcase,
   Building2,
   CheckSquare,
+  ClipboardCheck,
   ClipboardList,
   CreditCard,
   Globe,
+  GraduationCap,
   KeyRound,
   LayoutDashboard,
   BookOpen,
@@ -38,12 +40,20 @@ const ADMIN_NAV_GROUPS = [
     ],
   },
   {
+    label: 'Hub',
+    items: [
+      { to: '/admin/services', label: 'Services', icon: Boxes },
+      { to: '/admin/service-requests', label: 'Service Requests', icon: ClipboardList },
+      { to: '/admin/mentorship', label: 'Mentorship', icon: GraduationCap },
+      { to: '/admin/mentorship-registrations', label: 'Mentorship Registrations', icon: ClipboardCheck },
+    ],
+  },
+  {
     label: 'Management',
     items: [
       { to: '/admin/users', label: 'Users', icon: UsersRound },
       { to: '/admin/invites', label: 'Invite Codes', icon: KeyRound },
       { to: '/admin/careers', label: 'Job Listings', icon: Briefcase },
-      { to: '/admin/hub', label: 'Services & Mentorship', icon: Boxes, disabled: true },
       { to: '/admin/space', label: 'Plans & Members', icon: Building2, disabled: true },
       { to: '/admin/site', label: 'Blog & Settings', icon: Globe, disabled: true },
     ],

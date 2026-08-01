@@ -11,6 +11,8 @@ import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
 import CourseRegister from './pages/CourseRegister';
 import Services from './pages/Services';
+import ServiceDetail from './pages/ServiceDetail';
+import ServiceRequest from './pages/ServiceRequest';
 import Mentorship from './pages/Mentorship';
 import Space from './pages/Space';
 import Blog from './pages/Blog';
@@ -19,6 +21,7 @@ import Careers from './pages/Careers';
 import JobDetail from './pages/JobDetail';
 import Scholarships from './pages/Scholarships';
 import ScholarshipDetail from './pages/ScholarshipDetail';
+import MentorshipDetail from './pages/MentorshipDetail';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -33,6 +36,11 @@ import AdminScholarships from './pages/admin/Scholarships';
 import ScholarshipForm from './pages/admin/ScholarshipForm';
 import AdminScholarshipApplications from './pages/admin/ScholarshipApplications';
 import AdminNotifications from './pages/admin/Notifications';
+import AdminServices from './pages/admin/hub/Services';
+import AdminServiceForm from './pages/admin/hub/ServiceForm';
+import AdminServiceRequests from './pages/admin/hub/ServiceRequests';
+import AdminMentorship from './pages/admin/hub/Mentorship';
+import AdminMentorshipRegistrations from './pages/admin/hub/MentorshipRegistrations';
 import StudentDashboard from './pages/student/Dashboard';
 import StudentNotifications from './pages/student/Notifications';
 import StudentCourses from './pages/student/Courses';
@@ -68,6 +76,8 @@ function App() {
         <Route path="/courses/:id" element={<CourseDetail />} />
         <Route path="/courses/:id/register" element={<CourseRegister />} />
         <Route path="/services" element={<Services />} />
+        <Route path="/services/:id" element={<ServiceDetail />} />
+        <Route path="/services/:id/request" element={<ServiceRequest />} />
         <Route path="/mentorship" element={<Mentorship />} />
         <Route path="/space" element={<Space />} />
         <Route path="/blog" element={<Blog />} />
@@ -76,6 +86,7 @@ function App() {
         <Route path="/careers/:id" element={<JobDetail />} />
         <Route path="/scholarships" element={<Scholarships />} />
         <Route path="/scholarships/:id" element={<ScholarshipDetail />} />
+        <Route path="/mentorship/:id" element={<MentorshipDetail />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
@@ -120,6 +131,12 @@ function App() {
           <Route path="scholarships/:id/edit" element={<ScholarshipForm />} />
           <Route path="scholarships/:id/applications" element={<AdminScholarshipApplications />} />
           <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="services" element={<AdminServices />} />
+          <Route path="services/new" element={<AdminServiceForm />} />
+          <Route path="services/:id/edit" element={<AdminServiceForm />} />
+          <Route path="service-requests" element={<AdminServiceRequests />} />
+          <Route path="mentorship" element={<AdminMentorship />} />
+          <Route path="mentorship-registrations" element={<AdminMentorshipRegistrations />} />
           <Route path="academy/courses" element={<AdminCourses />} />
           <Route path="academy/courses/:id/content" element={<AdminCourseContent />} />
           <Route path="academy/cohorts" element={<AdminCohorts />} />

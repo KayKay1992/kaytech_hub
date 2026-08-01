@@ -1,16 +1,20 @@
+import { useEffect, useState } from 'react';
+import api from '../api/axios';
 import PageHeader from '../components/common/PageHeader';
-import Reveal from '../components/common/Reveal';
-import NotifyCta from '../components/common/NotifyCta';
-
-// Sample offerings — the real Service model/request flow is Hub module work.
-// This page previews what's coming; it doesn't submit real consulting requests yet.
-const SERVICES = [
-  { title: 'Business Strategy Consulting', detail: 'Get hands-on guidance to plan, structure, and grow your business.' },
-  { title: 'Brand & Marketing Consulting', detail: 'Sharpen your positioning and go-to-market approach.' },
-  { title: 'Tech Advisory', detail: 'Practical advice on tools, systems, and technical hiring.' },
-];
+import ServiceCard from '../components/services/ServiceCard';
 
 export default function Services() {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get('/services')
+      .then((res) => setServices(res.data.services))
+      .catch((err) => setError(err.response?.data?.message || 'Failed to load services'))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <>
       <PageHeader
@@ -20,17 +24,19 @@ export default function Services() {
       />
 
       <section className="section section--flush-top">
-        <div className="card-grid">
-          {SERVICES.map((service, i) => (
-            <Reveal as="div" className="card" key={service.title} index={i}>
-              <h3>{service.title}</h3>
-              <p>{service.detail}</p>
-            </Reveal>
-          ))}
-        </div>
+        {error && <p className="form-error">{error}</p>}
+        {loading ? (
+          <p>Loading services...</p>
+        ) : services.length === 0 ? (
+          <p>No services listed right now — check back soon.</p>
+        ) : (
+          <div className="course-grid">
+            {services.map((service, i) => (
+              <ServiceCard service={service} index={i} key={service._id} />
+            ))}
+          </div>
+        )}
       </section>
-
-      <NotifyCta text="Consulting requests aren't live yet — reach out and we'll follow up personally." />
     </>
   );
 }
