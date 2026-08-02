@@ -27,6 +27,8 @@ const serviceRoutes = require('./routes/serviceRoutes');
 const adminServiceRoutes = require('./routes/adminServiceRoutes');
 const mentorshipRoutes = require('./routes/mentorshipRoutes');
 const adminMentorshipRoutes = require('./routes/adminMentorshipRoutes');
+const spaceRoutes = require('./routes/spaceRoutes');
+const adminSpaceRoutes = require('./routes/adminSpaceRoutes');
 
 const app = express();
 
@@ -58,6 +60,8 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/admin', adminServiceRoutes);
 app.use('/api/mentorship', mentorshipRoutes);
 app.use('/api/admin', adminMentorshipRoutes);
+app.use('/api/space', spaceRoutes);
+app.use('/api/admin', adminSpaceRoutes);
 
 // 404 handler
 app.use('/api', (req, res) => {

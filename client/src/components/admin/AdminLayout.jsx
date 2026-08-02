@@ -49,12 +49,18 @@ const ADMIN_NAV_GROUPS = [
     ],
   },
   {
+    label: 'Space',
+    items: [
+      { to: '/admin/space/plans', label: 'Plans', icon: Building2 },
+      { to: '/admin/space/subscriptions', label: 'Subscriptions', icon: ClipboardList },
+    ],
+  },
+  {
     label: 'Management',
     items: [
       { to: '/admin/users', label: 'Users', icon: UsersRound },
       { to: '/admin/invites', label: 'Invite Codes', icon: KeyRound },
       { to: '/admin/careers', label: 'Job Listings', icon: Briefcase },
-      { to: '/admin/space', label: 'Plans & Members', icon: Building2, disabled: true },
       { to: '/admin/site', label: 'Blog & Settings', icon: Globe, disabled: true },
     ],
   },

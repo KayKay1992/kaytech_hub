@@ -15,6 +15,7 @@ import ServiceDetail from './pages/ServiceDetail';
 import ServiceRequest from './pages/ServiceRequest';
 import Mentorship from './pages/Mentorship';
 import Space from './pages/Space';
+import SpaceReserve from './pages/SpaceReserve';
 import Blog from './pages/Blog';
 import Events from './pages/Events';
 import Careers from './pages/Careers';
@@ -41,6 +42,8 @@ import AdminServiceForm from './pages/admin/hub/ServiceForm';
 import AdminServiceRequests from './pages/admin/hub/ServiceRequests';
 import AdminMentorship from './pages/admin/hub/Mentorship';
 import AdminMentorshipRegistrations from './pages/admin/hub/MentorshipRegistrations';
+import AdminSpacePlans from './pages/admin/space/Plans';
+import AdminSpaceSubscriptions from './pages/admin/space/Subscriptions';
 import StudentDashboard from './pages/student/Dashboard';
 import StudentNotifications from './pages/student/Notifications';
 import StudentCourses from './pages/student/Courses';
@@ -80,6 +83,7 @@ function App() {
         <Route path="/services/:id/request" element={<ServiceRequest />} />
         <Route path="/mentorship" element={<Mentorship />} />
         <Route path="/space" element={<Space />} />
+        <Route path="/space/:planId/reserve" element={<SpaceReserve />} />
         <Route path="/blog" element={<Blog />} />
         <Route path="/events" element={<Events />} />
         <Route path="/careers" element={<Careers />} />
@@ -137,6 +141,8 @@ function App() {
           <Route path="service-requests" element={<AdminServiceRequests />} />
           <Route path="mentorship" element={<AdminMentorship />} />
           <Route path="mentorship-registrations" element={<AdminMentorshipRegistrations />} />
+          <Route path="space/plans" element={<AdminSpacePlans />} />
+          <Route path="space/subscriptions" element={<AdminSpaceSubscriptions />} />
           <Route path="academy/courses" element={<AdminCourses />} />
           <Route path="academy/courses/:id/content" element={<AdminCourseContent />} />
           <Route path="academy/cohorts" element={<AdminCohorts />} />
