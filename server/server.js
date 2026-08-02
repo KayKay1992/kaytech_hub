@@ -29,6 +29,11 @@ const mentorshipRoutes = require('./routes/mentorshipRoutes');
 const adminMentorshipRoutes = require('./routes/adminMentorshipRoutes');
 const spaceRoutes = require('./routes/spaceRoutes');
 const adminSpaceRoutes = require('./routes/adminSpaceRoutes');
+const successStoryRoutes = require('./routes/successStoryRoutes');
+const studentSuccessStoryRoutes = require('./routes/studentSuccessStoryRoutes');
+const adminSuccessStoryRoutes = require('./routes/adminSuccessStoryRoutes');
+const testimonialRoutes = require('./routes/testimonialRoutes');
+const adminTestimonialRoutes = require('./routes/adminTestimonialRoutes');
 
 const app = express();
 
@@ -62,6 +67,11 @@ app.use('/api/mentorship', mentorshipRoutes);
 app.use('/api/admin', adminMentorshipRoutes);
 app.use('/api/space', spaceRoutes);
 app.use('/api/admin', adminSpaceRoutes);
+app.use('/api/success-stories', successStoryRoutes);
+app.use('/api/student', studentSuccessStoryRoutes);
+app.use('/api/admin', adminSuccessStoryRoutes);
+app.use('/api/testimonials', testimonialRoutes);
+app.use('/api/admin', adminTestimonialRoutes);
 
 // 404 handler
 app.use('/api', (req, res) => {

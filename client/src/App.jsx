@@ -24,6 +24,7 @@ import Scholarships from './pages/Scholarships';
 import ScholarshipDetail from './pages/ScholarshipDetail';
 import MentorshipDetail from './pages/MentorshipDetail';
 import Contact from './pages/Contact';
+import TestimonialSubmit from './pages/TestimonialSubmit';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import NotFound from './pages/NotFound';
@@ -37,6 +38,8 @@ import AdminScholarships from './pages/admin/Scholarships';
 import ScholarshipForm from './pages/admin/ScholarshipForm';
 import AdminScholarshipApplications from './pages/admin/ScholarshipApplications';
 import AdminNotifications from './pages/admin/Notifications';
+import AdminSuccessStories from './pages/admin/SuccessStories';
+import AdminTestimonials from './pages/admin/Testimonials';
 import AdminServices from './pages/admin/hub/Services';
 import AdminServiceForm from './pages/admin/hub/ServiceForm';
 import AdminServiceRequests from './pages/admin/hub/ServiceRequests';
@@ -50,6 +53,7 @@ import StudentCourses from './pages/student/Courses';
 import StudentCourseContent from './pages/student/CourseContent';
 import StudentAssignments from './pages/student/Assignments';
 import StudentCertificates from './pages/student/Certificates';
+import StudentSuccessStoryForm from './pages/student/SuccessStoryForm';
 import InstructorDashboard from './pages/instructor/Dashboard';
 import InstructorNotifications from './pages/instructor/Notifications';
 import AdminCourses from './pages/admin/academy/Courses';
@@ -92,6 +96,7 @@ function App() {
         <Route path="/scholarships/:id" element={<ScholarshipDetail />} />
         <Route path="/mentorship/:id" element={<MentorshipDetail />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/testimonials/submit" element={<TestimonialSubmit />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<NotFound />} />
@@ -105,6 +110,7 @@ function App() {
           <Route path="courses/:cohortId" element={<StudentCourseContent />} />
           <Route path="assignments" element={<StudentAssignments />} />
           <Route path="certificates" element={<StudentCertificates />} />
+          <Route path="success-story" element={<StudentSuccessStoryForm />} />
         </Route>
       </Route>
 
@@ -135,6 +141,8 @@ function App() {
           <Route path="scholarships/:id/edit" element={<ScholarshipForm />} />
           <Route path="scholarships/:id/applications" element={<AdminScholarshipApplications />} />
           <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="success-stories" element={<AdminSuccessStories />} />
+          <Route path="testimonials" element={<AdminTestimonials />} />
           <Route path="services" element={<AdminServices />} />
           <Route path="services/new" element={<AdminServiceForm />} />
           <Route path="services/:id/edit" element={<AdminServiceForm />} />

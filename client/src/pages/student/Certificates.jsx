@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import PageHeader from '../../components/common/PageHeader';
 import Reveal from '../../components/common/Reveal';
@@ -26,32 +27,40 @@ export default function StudentCertificates() {
         ) : certificates.length === 0 ? (
           <p>No certificates yet — these are issued by an admin once you've completed a cohort.</p>
         ) : (
-          <div className="invite-table-wrap">
-            <table className="invite-table">
-              <thead>
-                <tr>
-                  <th>Course</th>
-                  <th>Cohort</th>
-                  <th>Issued</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {certificates.map((cert, i) => (
-                  <Reveal as="tr" key={cert._id} index={i}>
-                    <td>{cert.cohort_id?.course_id?.title || '—'}</td>
-                    <td>{cert.cohort_id?.name || '—'}</td>
-                    <td className="payments-date">{new Date(cert.issued_at).toLocaleDateString()}</td>
-                    <td>
-                      <a href={cert.certificate_url} target="_blank" rel="noreferrer" className="btn btn--primary">
-                        Download
-                      </a>
-                    </td>
-                  </Reveal>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="invite-table-wrap">
+              <table className="invite-table">
+                <thead>
+                  <tr>
+                    <th>Course</th>
+                    <th>Cohort</th>
+                    <th>Issued</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {certificates.map((cert, i) => (
+                    <Reveal as="tr" key={cert._id} index={i}>
+                      <td>{cert.cohort_id?.course_id?.title || '—'}</td>
+                      <td>{cert.cohort_id?.name || '—'}</td>
+                      <td className="payments-date">{new Date(cert.issued_at).toLocaleDateString()}</td>
+                      <td>
+                        <a href={cert.certificate_url} target="_blank" rel="noreferrer" className="btn btn--primary">
+                          Download
+                        </a>
+                      </td>
+                    </Reveal>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <Reveal as="div" className="course-section" style={{ marginTop: 28 }}>
+              <h3>Share Your Success Story</h3>
+              <p>Completed a cohort? Tell us about the outcome — approved stories may be featured on our Home page.</p>
+              <Link to="/student/success-story" className="btn btn--primary">Share Your Success Story</Link>
+            </Reveal>
+          </>
         )}
       </section>
     </>

@@ -1,12 +1,21 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Reveal from '../common/Reveal';
-
-const TESTIMONIALS = [
-  { quote: 'The instructors actually care whether you understand the material.', author: 'Chidi E., Student' },
-  { quote: 'Mentorship helped me structure my business plan properly.', author: 'Grace K., Mentee' },
-  { quote: 'The co-working space is quiet and reliable — great for deep work.', author: 'Samuel I., Space Member' },
-];
+import RandomizedShowcase from './RandomizedShowcase';
+import TestimonialCard from './TestimonialCard';
+import api from '../../api/axios';
 
 export default function Testimonials() {
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.get('/testimonials')
+      .then((res) => setTestimonials(res.data.testimonials))
+      .catch(() => setTestimonials([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <section className="section section--muted">
       <Reveal as="div" className="section__header">
@@ -14,13 +23,20 @@ export default function Testimonials() {
         <h2>What People Say</h2>
       </Reveal>
 
-      <div className="card-grid">
-        {TESTIMONIALS.map((t, i) => (
-          <Reveal as="blockquote" className="testimonial" key={t.author} index={i}>
-            <p>&ldquo;{t.quote}&rdquo;</p>
-            <cite>{t.author}</cite>
-          </Reveal>
-        ))}
+      {loading ? (
+        <p>Loading testimonials...</p>
+      ) : testimonials.length === 0 ? (
+        <p>Testimonials will appear here as they're submitted and approved.</p>
+      ) : (
+        <RandomizedShowcase
+          items={testimonials}
+          getKey={(t) => t._id}
+          renderCard={(t, i) => <TestimonialCard testimonial={t} index={i} key={t._id} />}
+        />
+      )}
+
+      <div className="courses-overview__more">
+        <Link to="/testimonials/submit" className="btn btn--ghost btn--lg">Share Your Experience</Link>
       </div>
     </section>
   );
