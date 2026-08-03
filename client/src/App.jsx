@@ -17,7 +17,9 @@ import Mentorship from './pages/Mentorship';
 import Space from './pages/Space';
 import SpaceReserve from './pages/SpaceReserve';
 import Blog from './pages/Blog';
+import BlogDetail from './pages/BlogDetail';
 import Events from './pages/Events';
+import EventRegister from './pages/EventRegister';
 import Careers from './pages/Careers';
 import JobDetail from './pages/JobDetail';
 import Scholarships from './pages/Scholarships';
@@ -40,6 +42,10 @@ import AdminScholarshipApplications from './pages/admin/ScholarshipApplications'
 import AdminNotifications from './pages/admin/Notifications';
 import AdminSuccessStories from './pages/admin/SuccessStories';
 import AdminTestimonials from './pages/admin/Testimonials';
+import AdminBlogPosts from './pages/admin/BlogPosts';
+import BlogPostForm from './pages/admin/BlogPostForm';
+import AdminEvents from './pages/admin/Events';
+import EventRegistrants from './pages/admin/EventRegistrants';
 import AdminServices from './pages/admin/hub/Services';
 import AdminServiceForm from './pages/admin/hub/ServiceForm';
 import AdminServiceRequests from './pages/admin/hub/ServiceRequests';
@@ -89,7 +95,9 @@ function App() {
         <Route path="/space" element={<Space />} />
         <Route path="/space/:planId/reserve" element={<SpaceReserve />} />
         <Route path="/blog" element={<Blog />} />
+        <Route path="/blog/:id" element={<BlogDetail />} />
         <Route path="/events" element={<Events />} />
+        <Route path="/events/:eventId/register" element={<EventRegister />} />
         <Route path="/careers" element={<Careers />} />
         <Route path="/careers/:id" element={<JobDetail />} />
         <Route path="/scholarships" element={<Scholarships />} />
@@ -143,6 +151,11 @@ function App() {
           <Route path="notifications" element={<AdminNotifications />} />
           <Route path="success-stories" element={<AdminSuccessStories />} />
           <Route path="testimonials" element={<AdminTestimonials />} />
+          <Route path="blog" element={<AdminBlogPosts />} />
+          <Route path="blog/new" element={<BlogPostForm />} />
+          <Route path="blog/:id/edit" element={<BlogPostForm />} />
+          <Route path="events" element={<AdminEvents />} />
+          <Route path="events/:eventId/registrants" element={<EventRegistrants />} />
           <Route path="services" element={<AdminServices />} />
           <Route path="services/new" element={<AdminServiceForm />} />
           <Route path="services/:id/edit" element={<AdminServiceForm />} />

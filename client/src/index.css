@@ -929,6 +929,34 @@ a:hover { color: var(--color-amber); }
 }
 .auth-form__switch { text-align: center; font-size: 0.9rem; margin: 0; }
 .contact-form { max-width: 520px; }
+.contact-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+.contact-info__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+.contact-info__item svg { color: var(--color-amber); flex-shrink: 0; margin-top: 2px; }
+.contact-info__item h4 { margin: 0 0 4px; font-size: 0.9rem; }
+.contact-info__item a, .contact-info__item span { color: var(--color-text-muted); font-size: 0.9rem; }
+.contact-map-wrap {
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+.contact-map {
+  width: 100%;
+  height: 320px;
+  border: 0;
+  display: block;
+}
 .form-success {
   background: color-mix(in srgb, var(--color-amber) 14%, transparent);
   color: var(--color-navy);
@@ -1934,6 +1962,56 @@ a:hover { color: var(--color-amber); }
   margin-bottom: 14px;
   display: block;
 }
+
+/* Event card image — unlike every other card thumbnail, this uses
+   object-fit: contain (not cover): event flyers/posters are often
+   full-bleed designed graphics where cropping would cut off text or a
+   logo, so the full image is shown letterboxed on a neutral fill instead. */
+.event-card__image-wrap {
+  width: 100%;
+  height: 160px;
+  border-radius: 12px;
+  background: var(--color-bg);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.event-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+.event-card__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  margin: 10px 0;
+}
+.event-card__meta-row svg { flex-shrink: 0; }
+.event-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.event-badge--free { background: var(--color-teal); color: var(--color-navy); }
+.event-badge--paid { background: var(--color-amber); color: var(--color-navy); }
+.event-card__spots {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin-bottom: 14px;
+}
+.event-card__spots--low { color: var(--color-danger); font-weight: 600; }
+.card.event-card { display: flex; flex-direction: column; }
+.event-card__footer { margin-top: auto; }
 .admin-image-preview {
   max-width: 220px;
   border-radius: var(--radius);
@@ -2728,6 +2806,23 @@ a:hover { color: var(--color-amber); }
   background: rgba(255, 176, 32, 0.15);
   color: var(--color-amber);
 }
+
+/* Single confirmation checkbox inside a .dark-form (e.g. "I agree to pay
+   on the event date") — the pill-option pattern below is for multi-choice
+   fields, not a fit for a single yes/no confirmation. */
+.dark-form__checkbox-label {
+  flex-direction: row !important;
+  align-items: flex-start;
+  gap: 10px !important;
+}
+.dark-form__checkbox-label input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  accent-color: var(--color-amber);
+}
+.dark-form__checkbox-label span { font-weight: 400; }
 
 /* Pill-button choice group — used inside .dark-form for small
    multiple-choice fields instead of plain radios/checkboxes */

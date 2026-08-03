@@ -30,12 +30,20 @@ export default function Dashboard() {
   const STATS = stats ? [
     { label: 'Total Students', value: String(stats.totalStudents) },
     { label: 'Total Instructors', value: String(stats.totalInstructors) },
+    { label: 'Total Courses', value: String(stats.totalCourses) },
+    { label: 'Total Combined Revenue', value: `₦${stats.totalRevenue.toLocaleString()}`, accent: true },
+    { label: 'Academy Revenue', value: `₦${stats.revenueByLine.academy.toLocaleString()}` },
+    { label: 'Services Revenue', value: `₦${stats.revenueByLine.services.toLocaleString()}` },
+    { label: 'Mentorship Revenue', value: `₦${stats.revenueByLine.mentorship.toLocaleString()}` },
+    { label: 'Space Revenue', value: `₦${stats.revenueByLine.space.toLocaleString()}` },
+    { label: 'Active Scholarships', value: String(stats.activeScholarships) },
+    { label: 'Mentorship Registrations', value: String(stats.mentorshipRegistrations) },
+    { label: 'Active Workspace Members', value: String(stats.activeWorkspaceMembers) },
     { label: 'Published Courses', value: `${stats.publishedCourses}/${stats.totalCourses}` },
     { label: 'Total Cohorts', value: String(stats.totalCohorts) },
     { label: 'Active Enrollments', value: String(stats.activeEnrollments) },
     { label: 'Pending Approvals', value: String(stats.pendingApprovals) },
     { label: 'New Registrations', value: String(stats.newRegistrations) },
-    { label: 'Total Revenue', value: `₦${stats.totalRevenue.toLocaleString()}` },
   ] : [];
 
   return (

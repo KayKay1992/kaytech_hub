@@ -1,15 +1,21 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../api/axios';
 import PageHeader from '../components/common/PageHeader';
 import Reveal from '../components/common/Reveal';
-import NotifyCta from '../components/common/NotifyCta';
-
-// Sample posts — the real BlogPost model is Site-Wide Admin module work.
-const POSTS = [
-  { title: '5 Skills Every New Developer Should Learn First', tag: 'Academy' },
-  { title: 'How We Built KayTech Hub\'s Mentorship Program', tag: 'Hub' },
-  { title: 'Why We Built a Physical Space, Not Just an Online Course', tag: 'Space' },
-];
 
 export default function Blog() {
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    api.get('/blog')
+      .then((res) => setPosts(res.data.posts))
+      .catch((err) => setError(err.response?.data?.message || 'Failed to load blog posts'))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <>
       <PageHeader
@@ -19,18 +25,39 @@ export default function Blog() {
       />
 
       <section className="section section--flush-top">
-        <div className="card-grid">
-          {POSTS.map((post, i) => (
-            <Reveal as="div" className="card" key={post.title} index={i}>
-              <div className="card__image-placeholder" />
-              <span className="badge">{post.tag}</span>
-              <h3>{post.title}</h3>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+        {error && <p className="form-error">{error}</p>}
+        {loading ? (
+          <p>Loading posts...</p>
+        ) : posts.length === 0 ? (
+          <p>No posts published yet — check back soon.</p>
+        ) : (
+          <div className="course-grid">
+            {posts.map((post, i) => (
+              <Reveal as="div" className="course-card" key={post._id} index={i}>
+                <div className="course-card__image-wrap">
+                  {post.image_url ? (
+                    <img src={post.image_url} alt={post.title} className="course-card__image" />
+                  ) : (
+                    <div className="course-card__image course-card__image--placeholder" />
+                  )}
+                </div>
 
-      <NotifyCta text="The blog isn't live yet — contact us if you'd like early access to new posts." />
+                <div className="course-card__body">
+                  <h3 className="course-card__title">{post.title}</h3>
+                  <p className="course-card__description">{post.content.slice(0, 140)}{post.content.length > 140 ? '…' : ''}</p>
+
+                  <div className="course-card__footer">
+                    <span className="payments-muted">{new Date(post.published_at).toLocaleDateString()}</span>
+                    <Link to={`/blog/${post._id}`} className="btn btn--primary course-card__cta">
+                      Read More <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        )}
+      </section>
     </>
   );
 }

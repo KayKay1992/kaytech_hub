@@ -1,7 +1,14 @@
 import { useState } from 'react';
+import { Mail, MapPin, Phone } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader';
 import Reveal from '../components/common/Reveal';
 import api from '../api/axios';
+
+// Placeholder contact details — swap these for the real ones once confirmed.
+const CONTACT_EMAIL = 'hello@kaytechhub.com';
+const CONTACT_PHONE = '+234 800 000 0000';
+const CONTACT_LOCATION = 'Port Harcourt, Rivers State, Nigeria';
+const MAP_EMBED_SRC = `https://www.google.com/maps?q=${encodeURIComponent(CONTACT_LOCATION)}&output=embed`;
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', message: '', type: 'general' });
@@ -34,6 +41,42 @@ export default function Contact() {
         title="Contact"
         description="Questions about courses, mentorship, or space membership? Send us a message."
       />
+
+      <section className="section section--flush-top contact-info">
+        <Reveal as="div" className="contact-info__item" index={0}>
+          <Mail size={20} aria-hidden="true" />
+          <div>
+            <h4>Email</h4>
+            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          </div>
+        </Reveal>
+        <Reveal as="div" className="contact-info__item" index={1}>
+          <Phone size={20} aria-hidden="true" />
+          <div>
+            <h4>Phone</h4>
+            <a href={`tel:${CONTACT_PHONE.replace(/\s+/g, '')}`}>{CONTACT_PHONE}</a>
+          </div>
+        </Reveal>
+        <Reveal as="div" className="contact-info__item" index={2}>
+          <MapPin size={20} aria-hidden="true" />
+          <div>
+            <h4>Location</h4>
+            <span>{CONTACT_LOCATION}</span>
+          </div>
+        </Reveal>
+      </section>
+
+      <section className="section section--flush-top">
+        <Reveal as="div" className="contact-map-wrap">
+          <iframe
+            title="KayTech Hub location"
+            className="contact-map"
+            src={MAP_EMBED_SRC}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </Reveal>
+      </section>
 
       <section className="auth-page">
         <Reveal as="form" className="auth-form contact-form" onSubmit={handleSubmit}>
