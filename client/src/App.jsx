@@ -29,6 +29,11 @@ import Contact from './pages/Contact';
 import TestimonialSubmit from './pages/TestimonialSubmit';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Profile from './pages/Profile';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import NotFound from './pages/NotFound';
 import Dashboard from './pages/admin/Dashboard';
 import Invites from './pages/admin/Invites';
@@ -107,6 +112,10 @@ function App() {
         <Route path="/testimonials/submit" element={<TestimonialSubmit />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="*" element={<NotFound />} />
       </Route>
 
@@ -119,6 +128,7 @@ function App() {
           <Route path="assignments" element={<StudentAssignments />} />
           <Route path="certificates" element={<StudentCertificates />} />
           <Route path="success-story" element={<StudentSuccessStoryForm />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
 
@@ -132,6 +142,7 @@ function App() {
           <Route path="academy/assignments/:assignmentId/submissions" element={<InstructorAssignmentSubmissions />} />
           <Route path="academy/attendance" element={<InstructorAttendance />} />
           <Route path="academy/payouts" element={<InstructorPayouts />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
 
@@ -175,6 +186,7 @@ function App() {
           <Route path="academy/registrations" element={<AdminRegistrations />} />
           <Route path="academy/payments" element={<AdminPayments />} />
           <Route path="academy/payouts" element={<AdminPayouts />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
     </Routes>

@@ -78,6 +78,10 @@ R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET_NAME=
 R2_ENDPOINT_URL=
+R2_PUBLIC_URL=
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=      # optional — defaults to Resend's sandbox sender
+CLIENT_URL=             # frontend origin, used to build links in emails (e.g. password reset)
 ```
 
 ## Commands

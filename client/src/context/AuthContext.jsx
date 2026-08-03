@@ -45,11 +45,46 @@ export function AuthProvider({ children }) {
     return res.data.user;
   };
 
+  // Builds multipart/form-data when a `photo` File is present, otherwise
+  // sends plain JSON — mirrors the pattern used for other image uploads.
+  const toRequestBody = (payload) => {
+    if (!(payload.photo instanceof File)) return payload;
+    const formData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') formData.append(key, value);
+    });
+    return formData;
+  };
+
   // Deliberately does not log the user in — after registering they land on
   // the login page and sign in explicitly.
   const register = async (payload) => {
-    const res = await api.post('/auth/register', payload);
+    const res = await api.post('/auth/register', toRequestBody(payload));
     return res.data.user;
+  };
+
+  const forgotPassword = async (email) => {
+    const res = await api.post('/auth/forgot-password', { email });
+    return res.data;
+  };
+
+  const resetPassword = async (token, password) => {
+    const res = await api.post('/auth/reset-password', { token, password });
+    return res.data;
+  };
+
+  // Updates the logged-in user's own profile and refreshes the cached
+  // session so the Topbar/UserMenu reflect the change immediately.
+  const updateProfile = async (payload) => {
+    const res = await api.patch('/auth/profile', toRequestBody(payload));
+    const token = localStorage.getItem(TOKEN_KEY);
+    persistSession({ token, user: res.data.user });
+    return res.data.user;
+  };
+
+  const changePassword = async (currentPassword, newPassword) => {
+    const res = await api.patch('/auth/change-password', { currentPassword, newPassword });
+    return res.data;
   };
 
   const logout = () => {
@@ -59,7 +94,19 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        forgotPassword,
+        resetPassword,
+        updateProfile,
+        changePassword,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

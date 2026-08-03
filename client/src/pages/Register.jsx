@@ -5,12 +5,19 @@ import { useAuth } from '../context/AuthContext';
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', inviteCode: '' });
+  const [form, setForm] = useState({
+    name: '', email: '', phone: '', password: '', inviteCode: '', photo: null, agreedToTerms: false,
+  });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, type, checked, value } = e.target;
+    setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
+  };
+
+  const handlePhotoChange = (e) => {
+    setForm({ ...form, photo: e.target.files[0] || null });
   };
 
   const handleSubmit = async (e) => {
@@ -62,6 +69,22 @@ export default function Register() {
             onChange={handleChange}
             placeholder="Have a code from an admin? Enter it here"
           />
+        </label>
+
+        <div className="auth-form__field">
+          <span className="auth-form__field-label">Profile photo (optional)</span>
+          <label className={`file-input-label ${form.photo ? 'file-input-label--chosen' : ''}`} title={form.photo?.name}>
+            {form.photo ? `📎 ${form.photo.name}` : '📎 Choose photo'}
+            <input type="file" accept="image/*" className="sr-only-file-input" onChange={handlePhotoChange} />
+          </label>
+        </div>
+
+        <label className="auth-form__checkbox-label">
+          <input type="checkbox" name="agreedToTerms" checked={form.agreedToTerms} onChange={handleChange} required />
+          <span>
+            I agree to the <Link to="/terms" target="_blank" rel="noreferrer">Terms of Service</Link> and{' '}
+            <Link to="/privacy" target="_blank" rel="noreferrer">Privacy Policy</Link>
+          </span>
         </label>
 
         <button type="submit" className="btn btn--primary btn--full" disabled={submitting}>

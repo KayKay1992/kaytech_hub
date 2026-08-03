@@ -36,6 +36,9 @@ export default function Login() {
         {location.state?.justRegistered && (
           <p className="form-success">Account created — log in to continue.</p>
         )}
+        {location.state?.passwordReset && (
+          <p className="form-success">Password reset — log in with your new password.</p>
+        )}
         {error && <p className="form-error">{error}</p>}
 
         <label>
@@ -47,6 +50,10 @@ export default function Login() {
           Password
           <input type="password" name="password" value={form.password} onChange={handleChange} required />
         </label>
+
+        <p className="auth-form__switch" style={{ margin: 0, textAlign: 'right' }}>
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
 
         <button type="submit" className="btn btn--primary btn--full" disabled={submitting}>
           {submitting ? 'Logging in...' : 'Log in'}

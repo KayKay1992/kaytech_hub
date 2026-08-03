@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, House, LogOut, Menu, User } from 'lucide-react';
 import NotificationBell from './NotificationBell';
 import { getInitials } from '../../utils/initials';
+import { getDashboardPath } from '../../utils/roleRoutes';
 
 const OBJECT_ID_RE = /^[0-9a-f]{24}$/i;
 
@@ -28,11 +29,21 @@ const derivePageTitle = (navGroups, pathname) => {
   return last ? humanize(last) : 'Dashboard';
 };
 
-// Avatar + dropdown (Profile, Settings — both flagged "coming soon" since
-// neither page exists yet; Log out — wired to the real handler).
+// Small avatar — the user's uploaded photo if set, initials otherwise.
+function UserAvatar({ user, large }) {
+  const className = `user-menu__avatar${large ? ' user-menu__avatar--lg' : ''}`;
+  if (user?.photo_url) {
+    return <img src={user.photo_url} alt={user?.name || 'Profile photo'} className={className} />;
+  }
+  return <span className={className}>{getInitials(user?.name)}</span>;
+}
+
+// Avatar + dropdown (Profile — links to the shared account page; Log out —
+// wired to the real handler).
 function UserMenu({ user, onLogout }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const profilePath = `${getDashboardPath(user?.role)}/profile`;
 
   useEffect(() => {
     if (!open) return undefined;
@@ -49,7 +60,7 @@ function UserMenu({ user, onLogout }) {
   return (
     <div className="user-menu" ref={ref}>
       <button type="button" className="user-menu__trigger" onClick={() => setOpen((v) => !v)} aria-haspopup="true" aria-expanded={open}>
-        <span className="user-menu__avatar">{getInitials(user?.name)}</span>
+        <UserAvatar user={user} />
         <ChevronDown size={16} className={`user-menu__chevron${open ? ' is-open' : ''}`} aria-hidden="true" />
       </button>
 
@@ -64,7 +75,7 @@ function UserMenu({ user, onLogout }) {
             transition={{ duration: 0.15, ease: 'easeOut' }}
           >
             <div className="user-menu__header">
-              <span className="user-menu__avatar user-menu__avatar--lg">{getInitials(user?.name)}</span>
+              <UserAvatar user={user} large />
               <div className="user-menu__header-text">
                 <strong>{user?.name}</strong>
                 <span className="user-menu__email">{user?.email}</span>
@@ -72,9 +83,9 @@ function UserMenu({ user, onLogout }) {
               </div>
             </div>
             <div className="user-menu__divider" />
-            <span className="user-menu__item user-menu__item--disabled" title="Coming soon">
+            <Link to={profilePath} className="user-menu__item" onClick={() => setOpen(false)}>
               <User size={16} aria-hidden="true" /> Profile
-            </span>
+            </Link>
             <button type="button" className="user-menu__item user-menu__item--danger" onClick={onLogout}>
               <LogOut size={16} aria-hidden="true" /> Log out
             </button>

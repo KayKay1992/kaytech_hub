@@ -26,6 +26,11 @@ export default function Footer() {
             <Link to="/careers">Careers</Link>
             <Link to="/contact">Contact</Link>
           </div>
+          <div>
+            <h4>Legal</h4>
+            <Link to="/terms">Terms of Service</Link>
+            <Link to="/privacy">Privacy Policy</Link>
+          </div>
         </div>
       </div>
 
