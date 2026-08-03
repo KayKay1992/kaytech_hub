@@ -886,6 +886,19 @@ a:hover { color: var(--color-amber); }
 
 .prose { max-width: 720px; margin: 0 auto; }
 
+/* Spam-trap field (see HoneypotField.jsx) — genuinely invisible: off-screen
+   and zero-size rather than display:none, which some bots skip filling. */
+.honeypot-field {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* Legal documents (Terms of Service, Privacy Policy) — plain readable
    text, not styled like a marketing page. */
 .legal-page h1 { margin-bottom: 4px; }
@@ -899,6 +912,31 @@ a:hover { color: var(--color-amber); }
 .legal-page a:hover { color: var(--color-amber); }
 
 .coming-soon { text-align: center; }
+
+/* 404 page */
+.not-found { text-align: center; padding: 96px 24px; }
+.not-found__inner { max-width: 420px; margin: 0 auto; }
+.not-found__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-amber) 14%, transparent);
+  color: var(--color-navy);
+  margin-bottom: 20px;
+}
+.not-found__code {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 4rem;
+  line-height: 1;
+  color: var(--color-amber);
+  margin: 0 0 8px;
+}
+.not-found h1 { margin-bottom: 12px; }
+.not-found .prose { margin-bottom: 28px; }
 
 /* Auth forms */
 .auth-page {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Reveal from '../components/common/Reveal';
 import FormPanel from '../components/common/FormPanel';
+import HoneypotField from '../components/common/HoneypotField';
 import api from '../api/axios';
 
 const DURATION_LABELS = { day: 'Daily', week: 'Weekly', month: 'Monthly', year: 'Yearly' };
@@ -11,7 +12,7 @@ const PURPOSE_OPTIONS = ['Remote Work', 'Business / Startup', 'Academic Research
 const EMPTY_FORM = {
   full_name: '', email: '', phone: '', address: '',
   occupation_or_purpose: '', valid_id_type: '', valid_id_number: '',
-  emergency_contact_name: '', emergency_contact_phone: '',
+  emergency_contact_name: '', emergency_contact_phone: '', website: '',
 };
 
 export default function SpaceReserve() {
@@ -83,6 +84,8 @@ export default function SpaceReserve() {
           ) : (
             <form className="dark-form" onSubmit={handleSubmit}>
               {submitError && <p className="form-error">{submitError}</p>}
+
+              <HoneypotField value={form.website} onChange={handleChange} />
 
               <label>
                 Full name

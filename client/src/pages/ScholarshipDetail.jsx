@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Reveal from '../components/common/Reveal';
 import FormPanel from '../components/common/FormPanel';
+import HoneypotField from '../components/common/HoneypotField';
 import api from '../api/axios';
 
 const PROCESS_STEPS = [
@@ -17,7 +18,7 @@ export default function ScholarshipDetail() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const [form, setForm] = useState({ applicant_name: '', email: '', phone: '', course_id: '' });
+  const [form, setForm] = useState({ applicant_name: '', email: '', phone: '', course_id: '', website: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -169,6 +170,8 @@ export default function ScholarshipDetail() {
                   <form className="dark-form" onSubmit={handleSubmit}>
                     <h3>Apply for this Scholarship</h3>
                     {submitError && <p className="form-error">{submitError}</p>}
+
+                    <HoneypotField value={form.website} onChange={handleChange} />
 
                     <label>
                       Full name

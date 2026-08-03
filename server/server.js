@@ -43,6 +43,10 @@ const app = express();
 
 connectDB();
 
+// Needed so express-rate-limit reads the real client IP (X-Forwarded-For)
+// instead of the reverse proxy's IP once deployed (Render, Railway, etc.).
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));

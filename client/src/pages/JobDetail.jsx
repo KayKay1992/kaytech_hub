@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Reveal from '../components/common/Reveal';
+import HoneypotField from '../components/common/HoneypotField';
 import api from '../api/axios';
 
 const TYPE_LABELS = {
@@ -16,7 +17,7 @@ export default function JobDetail() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const [form, setForm] = useState({ full_name: '', email: '', phone: '', cover_note: '' });
+  const [form, setForm] = useState({ full_name: '', email: '', phone: '', cover_note: '', website: '' });
   const [resumeFile, setResumeFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -51,6 +52,7 @@ export default function JobDetail() {
       data.append('email', form.email);
       data.append('phone', form.phone);
       data.append('cover_note', form.cover_note);
+      data.append('website', form.website);
       data.append('resume', resumeFile);
 
       await api.post(`/jobs/${id}/apply`, data);
@@ -109,6 +111,8 @@ export default function JobDetail() {
         <Reveal as="form" className="auth-form job-apply-form" delay={0.2} onSubmit={handleSubmit}>
           <h3>Apply Now</h3>
           {submitError && <p className="form-error">{submitError}</p>}
+
+          <HoneypotField value={form.website} onChange={handleChange} />
 
           <label>
             Full name

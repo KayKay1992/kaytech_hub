@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Reveal from '../components/common/Reveal';
 import FormPanel from '../components/common/FormPanel';
+import HoneypotField from '../components/common/HoneypotField';
 import api from '../api/axios';
 
-const EMPTY_FORM = { name: '', email: '', phone: '', company_name: '', message: '' };
+const EMPTY_FORM = { name: '', email: '', phone: '', company_name: '', message: '', website: '' };
 
 export default function ServiceRequest() {
   const { id } = useParams();
@@ -74,6 +75,8 @@ export default function ServiceRequest() {
           ) : (
             <form className="dark-form" onSubmit={handleSubmit}>
               {submitError && <p className="form-error">{submitError}</p>}
+
+              <HoneypotField value={form.website} onChange={handleChange} />
 
               <label>
                 Full name

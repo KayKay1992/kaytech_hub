@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Reveal from '../components/common/Reveal';
 import FormPanel from '../components/common/FormPanel';
+import HoneypotField from '../components/common/HoneypotField';
 import api from '../api/axios';
 
-const EMPTY_FORM = { full_name: '', email: '', phone: '', willing_to_pay_at_event: false };
+const EMPTY_FORM = { full_name: '', email: '', phone: '', willing_to_pay_at_event: false, website: '' };
 
 const TYPE_LABELS = {
   seminar: 'Seminar',
@@ -100,6 +101,8 @@ export default function EventRegister() {
           ) : (
             <form className="dark-form" onSubmit={handleSubmit}>
               {submitError && <p className="form-error">{submitError}</p>}
+
+              <HoneypotField value={form.website} onChange={handleChange} />
 
               <label>
                 Full name

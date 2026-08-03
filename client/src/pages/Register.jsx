@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import HoneypotField from '../components/common/HoneypotField';
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', password: '', inviteCode: '', photo: null, agreedToTerms: false,
+    name: '', email: '', phone: '', password: '', inviteCode: '', photo: null, agreedToTerms: false, website: '',
   });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -39,6 +40,8 @@ export default function Register() {
       <form className="auth-form" onSubmit={handleSubmit}>
         <h1>Create your account</h1>
         {error && <p className="form-error">{error}</p>}
+
+        <HoneypotField value={form.website} onChange={handleChange} />
 
         <label>
           Full name

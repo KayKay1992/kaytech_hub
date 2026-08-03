@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Reveal from '../components/common/Reveal';
 import FormPanel from '../components/common/FormPanel';
+import HoneypotField from '../components/common/HoneypotField';
 import api from '../api/axios';
 
 const OCCUPATION_OPTIONS = ['Student', 'Employed', 'Job-seeking', 'Business owner', 'Other'];
@@ -10,7 +11,7 @@ const EXPERIENCE_OPTIONS = ['Beginner', 'Intermediate', 'Advanced'];
 const EMPTY_FORM = {
   full_name: '', email: '', phone: '',
   occupation_or_status: '', experience_level: '',
-  reason_for_joining: '', how_heard_about_us: '',
+  reason_for_joining: '', how_heard_about_us: '', website: '',
 };
 
 export default function MentorshipDetail() {
@@ -129,6 +130,8 @@ export default function MentorshipDetail() {
                   <form className="dark-form" onSubmit={handleSubmit}>
                     <h3>Register for this Program</h3>
                     {submitError && <p className="form-error">{submitError}</p>}
+
+                    <HoneypotField value={form.website} onChange={handleChange} />
 
                     <label>
                       Full name

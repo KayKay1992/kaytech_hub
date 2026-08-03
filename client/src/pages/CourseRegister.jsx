@@ -3,11 +3,12 @@ import { useParams, Link } from 'react-router-dom';
 import Reveal from '../components/common/Reveal';
 import FormPanel from '../components/common/FormPanel';
 import PillSelect from '../components/common/PillSelect';
+import HoneypotField from '../components/common/HoneypotField';
 import api from '../api/axios';
 
 const EMPTY_FORM = {
   full_name: '', email: '', phone: '', occupation_status: '',
-  experience_level: 'beginner', reason: '', how_heard: '', cohort_id: '',
+  experience_level: 'beginner', reason: '', how_heard: '', cohort_id: '', website: '',
 };
 
 const EXPERIENCE_OPTIONS = [
@@ -92,6 +93,8 @@ export default function CourseRegister() {
           ) : (
             <form className="dark-form" onSubmit={handleSubmit}>
               {submitError && <p className="form-error">{submitError}</p>}
+
+              <HoneypotField value={form.website} onChange={handleChange} />
 
               <label>
                 Full name

@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Reveal from '../components/common/Reveal';
 import FormPanel from '../components/common/FormPanel';
+import HoneypotField from '../components/common/HoneypotField';
 import api from '../api/axios';
 
-const EMPTY_FORM = { name: '', role_or_organization: '', message: '', rating: '' };
+const EMPTY_FORM = { name: '', role_or_organization: '', message: '', rating: '', website: '' };
 
 export default function TestimonialSubmit() {
   const [form, setForm] = useState(EMPTY_FORM);
@@ -53,6 +54,8 @@ export default function TestimonialSubmit() {
           ) : (
             <form className="dark-form" onSubmit={handleSubmit}>
               {submitError && <p className="form-error">{submitError}</p>}
+
+              <HoneypotField value={form.website} onChange={handleChange} />
 
               <label>
                 Full name

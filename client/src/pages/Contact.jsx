@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import PageHeader from '../components/common/PageHeader';
 import Reveal from '../components/common/Reveal';
+import HoneypotField from '../components/common/HoneypotField';
 import api from '../api/axios';
 
 // Placeholder contact details — swap these for the real ones once confirmed.
@@ -11,7 +12,7 @@ const CONTACT_LOCATION = 'Port Harcourt, Rivers State, Nigeria';
 const MAP_EMBED_SRC = `https://www.google.com/maps?q=${encodeURIComponent(CONTACT_LOCATION)}&output=embed`;
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', message: '', type: 'general' });
+  const [form, setForm] = useState({ name: '', email: '', message: '', type: 'general', website: '' });
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -89,6 +90,8 @@ export default function Contact() {
             <>
               <h1>Send a message</h1>
               {error && <p className="form-error">{error}</p>}
+
+              <HoneypotField value={form.website} onChange={handleChange} />
 
               <label>
                 Full name
