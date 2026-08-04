@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
+import SEO from '../components/common/SEO';
 import Reveal from '../components/common/Reveal';
 
 export default function BlogDetail() {
@@ -30,8 +31,13 @@ export default function BlogDetail() {
     );
   }
 
+  const metaDescription = post.content.length > 160
+    ? `${post.content.slice(0, 157)}...`
+    : post.content;
+
   return (
     <section className="section">
+      <SEO title={post.title} description={metaDescription} image={post.image_url} type="article" />
       <Reveal as="div" className="course-hero">
         <div className="course-hero__image-wrap">
           {post.image_url ? (

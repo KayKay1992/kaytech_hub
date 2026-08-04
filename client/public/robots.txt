@@ -1,0 +1,7 @@
+User-agent: *
+Disallow: /admin
+Disallow: /student
+Disallow: /instructor
+Allow: /
+
+Sitemap: https://kaytechhub.com/sitemap.xml

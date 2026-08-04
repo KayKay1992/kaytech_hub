@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
+import SEO from '../components/common/SEO';
 import PageHeader from '../components/common/PageHeader';
 import CourseCard from '../components/courses/CourseCard';
 
@@ -17,6 +18,10 @@ export default function Courses() {
 
   return (
     <>
+      <SEO
+        title="Courses"
+        description="Explore practical, job-ready tech courses at KayTech Academy — every course bundles real AI skills you can use on the job."
+      />
       <PageHeader
         eyebrow="KayTech Academy"
         title="Courses"

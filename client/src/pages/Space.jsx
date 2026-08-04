@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SEO from '../components/common/SEO';
 import PageHeader from '../components/common/PageHeader';
 import PlanCard from '../components/space/PlanCard';
 import api from '../api/axios';
@@ -31,6 +32,10 @@ export default function Space() {
 
   return (
     <>
+      <SEO
+        title="Co-working Space"
+        description="Reserve a reliable co-working and research space at KayTech Hub — free power, free data, and a quiet place to get work done."
+      />
       <PageHeader
         eyebrow="KayTech Hub"
         title="Space"

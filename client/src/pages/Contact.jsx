@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, MapPin, Phone } from 'lucide-react';
+import SEO from '../components/common/SEO';
 import PageHeader from '../components/common/PageHeader';
 import Reveal from '../components/common/Reveal';
 import HoneypotField from '../components/common/HoneypotField';
@@ -37,6 +38,10 @@ export default function Contact() {
 
   return (
     <>
+      <SEO
+        title="Contact Us"
+        description="Get in touch with KayTech Hub — questions about courses, mentorship, or co-working space membership? Send us a message."
+      />
       <PageHeader
         eyebrow="Get In Touch"
         title="Contact"

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
+import SEO from '../components/common/SEO';
 import PageHeader from '../components/common/PageHeader';
 import ServiceCard from '../components/services/ServiceCard';
 
@@ -17,6 +18,10 @@ export default function Services() {
 
   return (
     <>
+      <SEO
+        title="Services"
+        description="Practical, no-fluff business consulting from KayTech Hub — web development, branding, marketing, and AI integration for founders and teams."
+      />
       <PageHeader
         eyebrow="KayTech Hub"
         title="Services"

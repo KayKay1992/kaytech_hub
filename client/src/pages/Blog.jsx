@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
+import SEO from '../components/common/SEO';
 import PageHeader from '../components/common/PageHeader';
 import Reveal from '../components/common/Reveal';
 
@@ -18,6 +19,10 @@ export default function Blog() {
 
   return (
     <>
+      <SEO
+        title="Blog"
+        description="Articles, updates, and insights from the KayTech Hub team on tech, careers, and building in Port Harcourt."
+      />
       <PageHeader
         eyebrow="KayTech Hub"
         title="Blog"

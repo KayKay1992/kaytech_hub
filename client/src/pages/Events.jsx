@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, MapPin } from 'lucide-react';
 import api from '../api/axios';
+import SEO from '../components/common/SEO';
 import PageHeader from '../components/common/PageHeader';
 import Reveal from '../components/common/Reveal';
 import NotifyCta from '../components/common/NotifyCta';
@@ -48,6 +49,10 @@ export default function Events() {
 
   return (
     <>
+      <SEO
+        title="Events"
+        description="Workshops, meetups, hackathons, and info sessions happening at KayTech Hub — see what's coming up and register."
+      />
       <PageHeader
         eyebrow="KayTech Hub"
         title="Events"

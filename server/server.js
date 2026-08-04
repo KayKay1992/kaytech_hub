@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const express = require('express');
@@ -6,6 +7,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const multer = require('multer');
 const connectDB = require('./config/db');
+const { socialPreviewMiddleware } = require('./middleware/socialPreview');
 
 const authRoutes = require('./routes/authRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
@@ -89,6 +91,26 @@ app.use('/api/admin', adminEventRoutes);
 app.use('/api', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
+
+// Social link-preview crawlers (Facebook, WhatsApp, Twitter/X, LinkedIn,
+// etc.) don't execute JS, so react-helmet-async's per-page tags never
+// reach them — this hands crawlers hitting a Course/Service/Blog post
+// page a real per-page preview instead. Every other request (browsers,
+// Googlebot) falls straight through unaffected.
+app.use(socialPreviewMiddleware);
+
+// Serve the built React app (single-server deployment: this same process
+// serves both the API and the SPA). Only active once `client` has been
+// built — local dev typically runs the Vite dev server separately instead,
+// so this is skipped rather than erroring when client/dist doesn't exist.
+const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
+const clientIndexPath = path.join(clientDistPath, 'index.html');
+if (fs.existsSync(clientIndexPath)) {
+  app.use(express.static(clientDistPath));
+  app.get('*', (req, res) => res.sendFile(clientIndexPath));
+} else {
+  console.log('client/dist not found — skipping static app serving (run `npm run build` in /client to enable it)');
+}
 
 // Central error handler (e.g. multer file-size/type errors)
 app.use((err, req, res, next) => {

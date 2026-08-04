@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
 import api from '../api/axios';
+import SEO from '../components/common/SEO';
 import Reveal from '../components/common/Reveal';
 
 const CATEGORY_LABELS = {
@@ -39,8 +40,13 @@ export default function ServiceDetail() {
     );
   }
 
+  const metaDescription = service.description.length > 160
+    ? `${service.description.slice(0, 157)}...`
+    : service.description;
+
   return (
     <section className="section">
+      <SEO title={service.title} description={metaDescription} image={service.image_url} />
       <Reveal as="div" className="course-hero">
         <div className="course-hero__image-wrap">
           {service.image_url ? (

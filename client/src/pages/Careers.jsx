@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/common/SEO';
 import PageHeader from '../components/common/PageHeader';
 import Reveal from '../components/common/Reveal';
 import api from '../api/axios';
@@ -25,6 +26,10 @@ export default function Careers() {
 
   return (
     <>
+      <SEO
+        title="Careers"
+        description="Open roles at KayTech Hub across teaching, operations, and building the Hub itself — join our team in Port Harcourt."
+      />
       <PageHeader
         eyebrow="Join KayTech Hub"
         title="Careers"

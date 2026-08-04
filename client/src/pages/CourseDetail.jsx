@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
+import SEO from '../components/common/SEO';
 import Reveal from '../components/common/Reveal';
 
 export default function CourseDetail() {
@@ -48,8 +49,13 @@ export default function CourseDetail() {
 
   const nextCohort = cohorts[0];
 
+  const metaDescription = course.description.length > 160
+    ? `${course.description.slice(0, 157)}...`
+    : course.description;
+
   return (
     <section className="section">
+      <SEO title={course.title} description={metaDescription} image={course.image_url} />
       <Reveal as="div" className="course-hero">
         <div className="course-hero__image-wrap">
           {course.image_url ? (

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
+import SEO from '../components/common/SEO';
 import PageHeader from '../components/common/PageHeader';
 import MentorshipCard from '../components/mentorship/MentorshipCard';
 
@@ -17,6 +18,10 @@ export default function Mentorship() {
 
   return (
     <>
+      <SEO
+        title="Mentorship Programs"
+        description="Join a paid mentorship program at KayTech Hub and get paired with people who've done the work, not just talked about it."
+      />
       <PageHeader
         eyebrow="KayTech Hub"
         title="Mentorship"
