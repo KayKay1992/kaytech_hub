@@ -79,6 +79,20 @@ export default function Users() {
     }
   };
 
+  const handleForumBanToggle = async (id, forum, banned) => {
+    setBusyId(id);
+    setError('');
+    try {
+      await api.patch(`/users/${id}/forum-ban`, { forum, banned });
+      const field = forum === 'student' ? 'forum_ban_student' : 'forum_ban_alumni';
+      setUsers((prev) => prev.map((u) => (u._id === id ? { ...u, [field]: banned } : u)));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update forum access');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const handleDelete = async (id) => {
     setBusyId(id);
     setError('');
@@ -128,6 +142,7 @@ export default function Users() {
                 <th>Email</th>
                 <th>Role</th>
                 <th>Joined</th>
+                <th>Forum Access</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -159,6 +174,28 @@ export default function Users() {
                       </div>
                     </td>
                     <td className="payments-date">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td>
+                      {u.role === 'student' ? (
+                        <div className="user-forum-toggles">
+                          <button
+                            type="button"
+                            className={`btn btn--ghost btn--sm${u.forum_ban_student ? ' btn--danger-outline' : ''}`}
+                            disabled={isBusy}
+                            onClick={() => handleForumBanToggle(u._id, 'student', !u.forum_ban_student)}
+                          >
+                            {u.forum_ban_student ? 'Unban Student Forum' : 'Ban Student Forum'}
+                          </button>
+                          <button
+                            type="button"
+                            className={`btn btn--ghost btn--sm${u.forum_ban_alumni ? ' btn--danger-outline' : ''}`}
+                            disabled={isBusy}
+                            onClick={() => handleForumBanToggle(u._id, 'alumni', !u.forum_ban_alumni)}
+                          >
+                            {u.forum_ban_alumni ? 'Unban Alumni Forum' : 'Ban Alumni Forum'}
+                          </button>
+                        </div>
+                      ) : '—'}
+                    </td>
                     <td>
                       {confirmingId === u._id ? (
                         <span className="confirm-delete">

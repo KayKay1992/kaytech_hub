@@ -14,7 +14,9 @@ import {
   LayoutDashboard,
   BookOpen,
   MessageSquareQuote,
+  MessagesSquare,
   Newspaper,
+  ShieldAlert,
   Star,
   Users2,
   UsersRound,
@@ -73,6 +75,14 @@ const ADMIN_NAV_GROUPS = [
     items: [
       { to: '/admin/blog', label: 'Blog', icon: Newspaper },
       { to: '/admin/events', label: 'Events', icon: CalendarDays },
+    ],
+  },
+  {
+    label: 'Community',
+    items: [
+      { to: '/admin/forums/student', label: 'Student Forum', icon: MessagesSquare },
+      { to: '/admin/forums/alumni', label: 'Alumni Forum', icon: MessagesSquare },
+      { to: '/admin/forum-moderation', label: 'Forum Moderation', icon: ShieldAlert },
     ],
   },
 ];

@@ -65,8 +65,12 @@ import StudentCourseContent from './pages/student/CourseContent';
 import StudentAssignments from './pages/student/Assignments';
 import StudentCertificates from './pages/student/Certificates';
 import StudentSuccessStoryForm from './pages/student/SuccessStoryForm';
+import StudentForums from './pages/student/Forums';
+import StudentForumPost from './pages/student/ForumPost';
 import InstructorDashboard from './pages/instructor/Dashboard';
 import InstructorNotifications from './pages/instructor/Notifications';
+import InstructorForums from './pages/instructor/Forums';
+import InstructorForumPost from './pages/instructor/ForumPost';
 import AdminCourses from './pages/admin/academy/Courses';
 import AdminCourseContent from './pages/admin/academy/CourseContent';
 import AdminCohorts from './pages/admin/academy/Cohorts';
@@ -83,6 +87,9 @@ import InstructorAssignments from './pages/instructor/academy/Assignments';
 import InstructorAssignmentSubmissions from './pages/instructor/academy/AssignmentSubmissions';
 import InstructorAttendance from './pages/instructor/academy/Attendance';
 import InstructorPayouts from './pages/instructor/academy/Payouts';
+import AdminForums from './pages/admin/Forums';
+import AdminForumPost from './pages/admin/ForumPost';
+import AdminForumModeration from './pages/admin/ForumModeration';
 
 function App() {
   return (
@@ -128,6 +135,8 @@ function App() {
           <Route path="assignments" element={<StudentAssignments />} />
           <Route path="certificates" element={<StudentCertificates />} />
           <Route path="success-story" element={<StudentSuccessStoryForm />} />
+          <Route path="forums/:forumType" element={<StudentForums />} />
+          <Route path="forums/:forumType/:postId" element={<StudentForumPost />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
@@ -142,6 +151,8 @@ function App() {
           <Route path="academy/assignments/:assignmentId/submissions" element={<InstructorAssignmentSubmissions />} />
           <Route path="academy/attendance" element={<InstructorAttendance />} />
           <Route path="academy/payouts" element={<InstructorPayouts />} />
+          <Route path="forums/:forumType" element={<InstructorForums />} />
+          <Route path="forums/:forumType/:postId" element={<InstructorForumPost />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
@@ -186,6 +197,9 @@ function App() {
           <Route path="academy/registrations" element={<AdminRegistrations />} />
           <Route path="academy/payments" element={<AdminPayments />} />
           <Route path="academy/payouts" element={<AdminPayouts />} />
+          <Route path="forums/:forumType" element={<AdminForums />} />
+          <Route path="forums/:forumType/:postId" element={<AdminForumPost />} />
+          <Route path="forum-moderation" element={<AdminForumModeration />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Route>

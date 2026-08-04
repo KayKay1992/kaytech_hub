@@ -73,4 +73,26 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { listUsers, updateUserRole, deleteUser };
+// PATCH /api/users/:id/forum-ban — admin only. body: { forum: 'student'|'alumni', banned: bool }
+const updateForumBan = async (req, res) => {
+  try {
+    const { forum, banned } = req.body;
+    if (!['student', 'alumni'].includes(forum)) {
+      return res.status(400).json({ message: "forum must be 'student' or 'alumni'" });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user[forum === 'student' ? 'forum_ban_student' : 'forum_ban_alumni'] = Boolean(banned);
+    await user.save();
+
+    res.json({ user });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update forum ban', error: err.message });
+  }
+};
+
+module.exports = { listUsers, updateUserRole, deleteUser, updateForumBan };

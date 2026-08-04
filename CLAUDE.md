@@ -20,7 +20,10 @@ This app has three independent business lines sharing one login system. Don't le
    - **Service**: has a short card description AND a full detail page (`/services/:id`) with `detailed_description`, up to 3 `gallery_images`, a `features` checklist, and `process_steps` ("How It Works"). "Request Service" is its own page (`/services/:id/request`, dark-panel form) — not a modal. Admin can create/edit via a full-page form (too much content for a modal). Admin can record one or more `ServicePayment`s per request (amount, method, date, note) for revenue tracking — a request isn't limited to one payment (deposits/milestones).
    - **Mentorship**: registration is a detailed form (full name, email, phone, occupation/status, experience level, reason for joining, how they heard about us — no login required). Admin can record one or more `MentorshipPayment`s per registration the same way, for revenue tracked separately from Academy and Services.
    - Both Services and Mentorship show a "Total Revenue" stat card on their admin pages (sum of their respective payment records) — kept separate from Academy's payment/payout figures.
-3. **Space** — co-working/research space plans and subscriptions. Standalone — not linked to `User`, `Course`, or any other model. Registration is a detailed form (no login) — full name, email, phone, address, occupation/purpose, valid ID type + number, emergency contact — since members are physically on-site.
+3. **Space** — co-working/research space plans and subscriptions. Standalone — not linked to `User`, `Course`, or any other model. Registration is a detailed form (no login) — full name, email, phone, address, occupation/purpose, valid ID type + number, emergency contact — since members are physically on-site. `WorkspacePlan.duration` is one of day/week/month/year (admin sets a price per duration) — public page displays plans sorted in that fixed order. Admin marking a subscription paid auto-calculates `end_date` from the plan's duration. Admin can record one or more `WorkspacePayment`s per subscription for revenue tracking, shown as a "Total Space Revenue" stat card.
+
+## Revenue tracking — four separate streams, never merged at the source
+Academy (`Payment`/`InstructorPayout`), Services (`ServicePayment`), Mentorship (`MentorshipPayment`), and Space (`WorkspacePayment`) each track revenue independently with their own stat cards on their respective admin pages. The main Admin Dashboard's Full Analytics pulls all four together into one combined total AND shows the per-business-line breakdown separately — don't collapse them into a single undifferentiated number anywhere.
 
 **Rule:** `Cohort`, `Enrollment`, and `Attendance` models belong to Academy only. Never reference them from Hub or Space features.
 
@@ -63,6 +66,28 @@ Admin has a "Notifications" page with two views: **Sent** (compose a `Notificati
 ## Home page section order (already built)
 Hero → Courses Overview → Scholarship Banner → Mentorship Preview (up to 4 open programs + "View More" button) → Services Preview (up to 4 services + "View More" button) → Student Success Stories → Testimonials → Call To Action. Keep new Home sections in this established order unless explicitly told to rearrange.
 
+## Events module — already built
+`Event` has `is_paid`, `price` (if paid), and `max_participants` (optional). Register button shows "Event Ended" (past date) or "Fully Booked" (capacity reached) as disabled states. Registration is its own page (dark-panel form) creating an `EventRegistration`; if paid, the registrant confirms `willing_to_pay_at_event` (payment is offline, on the day). Admin's registrant list is a dedicated page, not a modal. Event images use `object-fit: contain`, not cropped cover.
+
+## Success Stories & Testimonials — already built
+Both need admin approval (`status: pending/approved/rejected`) before appearing publicly, and a `featured` flag controls Home page display. `SuccessStory` is submitted by logged-in students only; `Testimonial` is a public form (no login) open to anyone (clients, mentees, workspace members). Both track `published_at` (set on approval, distinct from `submitted_at`) and display name + photo + date. Home page shows a **random** subset (up to 4 on desktop, rotating carousel on mobile) from the approved+featured pool — re-randomized per visit, not fixed order.
+
+## Featured Courses — already built
+`Course.featured` (boolean) controls the Home page's 4-course preview grid — admin toggles this per course; it is NOT automatically the newest or first 4 courses.
+
+## Account system — already built
+Password reset (`PasswordResetToken`, emailed via Resend) is separate from the in-app Profile page's "Change Password" (requires current password). Signup supports an optional profile photo upload. Profile page (photo, name, phone, email-with-uniqueness-check, password) is shared across all roles, reachable from the Topbar avatar dropdown.
+
+## Legal, spam protection, and SEO — already built
+- `/terms` and `/privacy` pages exist; signup requires a ToS/Privacy consent checkbox.
+- Every public unauthenticated form (Contact, Testimonial, Scholarship, Service Request, Mentorship, Workspace Reservation, Job Application, Event Registration, Course Register Interest, Forgot Password) has a honeypot field + IP rate limiting. Apply the same to any new public form.
+- Per-page `<title>`/meta description via react-helmet-async, favicon, robots.txt/sitemap.xml.
+- Social preview cards (WhatsApp/Facebook/Twitter) for Course/Service/Blog pages use **server-side bot-detecting middleware** (crawlers don't run JS) — real per-page OG tags only reach crawlers through that middleware, not react-helmet-async alone. Extend this middleware, don't duplicate it, for any new page type that needs social previews.
+- **Deployment reminder:** `client/dist` is a static build snapshot — run `npm run build` after any client change before it'll show up when the server serves it (doesn't auto-rebuild like Vite dev mode).
+
+## Community Forums — already built
+Two forums, **membership computed dynamically from real Enrollment/Certificate records, never cached**: Student Forum (any student with an active, uncertified enrollment; auto-loses access once certified for that course) and Alumni Forum (any student with at least one Certificate — can overlap with Student Forum membership if currently taking a new course). Instructors/Admin are always members of both. Admin can soft-delete posts/replies (`status: removed`, with reason) and ban a student from a specific forum independently (`User.forum_ban_student` / `forum_ban_alumni`) without deleting their account.
+
 ## Conventions
 - Every model that's admin-created and shown publicly (Course, ScholarshipProgram, Service, MentorshipProgram, WorkspacePlan, BlogPost) has an `image_url` field, set via the shared upload utility.
 - No video anywhere in this app. Lessons use notes (PDF), resources (links/files), and coding exercises — not video.
@@ -78,10 +103,6 @@ R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET_NAME=
 R2_ENDPOINT_URL=
-R2_PUBLIC_URL=
-RESEND_API_KEY=
-RESEND_FROM_EMAIL=      # optional — defaults to Resend's sandbox sender
-CLIENT_URL=             # frontend origin, used to build links in emails (e.g. password reset)
 ```
 
 ## Commands

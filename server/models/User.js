@@ -31,6 +31,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  // Independent per-forum bans — remove access to one forum without
+  // touching the other or the account itself.
+  forum_ban_student: {
+    type: Boolean,
+    default: false,
+  },
+  forum_ban_alumni: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 });

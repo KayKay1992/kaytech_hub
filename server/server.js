@@ -40,6 +40,8 @@ const blogRoutes = require('./routes/blogRoutes');
 const adminBlogRoutes = require('./routes/adminBlogRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const adminEventRoutes = require('./routes/adminEventRoutes');
+const forumRoutes = require('./routes/forumRoutes');
+const adminForumRoutes = require('./routes/adminForumRoutes');
 
 const app = express();
 
@@ -86,6 +88,8 @@ app.use('/api/blog', blogRoutes);
 app.use('/api/admin', adminBlogRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/admin', adminEventRoutes);
+app.use('/api/forums', forumRoutes);
+app.use('/api/admin', adminForumRoutes);
 
 // 404 handler
 app.use('/api', (req, res) => {
