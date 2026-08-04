@@ -202,7 +202,7 @@ const createCourse = async (req, res) => {
 // PATCH /api/admin/academy/courses/:id — edit, change status (incl. archive), replace image
 const updateCourse = async (req, res) => {
   try {
-    const { title, description, category, duration, price, requirements, curriculum, status } = req.body;
+    const { title, description, category, duration, price, requirements, curriculum, status, featured } = req.body;
     if (status && !COURSE_STATUSES.includes(status)) {
       return res.status(400).json({ message: `Status must be one of: ${COURSE_STATUSES.join(', ')}` });
     }
@@ -220,6 +220,7 @@ const updateCourse = async (req, res) => {
     if (requirements !== undefined) course.requirements = requirements;
     if (curriculum !== undefined) course.curriculum = curriculum;
     if (status !== undefined) course.status = status;
+    if (featured !== undefined) course.featured = featured === true || featured === 'true';
 
     if (req.file) {
       const oldKey = keyFromUrl(course.image_url);

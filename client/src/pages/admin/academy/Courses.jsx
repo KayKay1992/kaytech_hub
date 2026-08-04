@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Archive, ArchiveRestore, BookOpen, FileEdit, Plus } from 'lucide-react';
+import { Archive, ArchiveRestore, BookOpen, FileEdit, Plus, Star } from 'lucide-react';
 import api from '../../../api/axios';
 import ListPageHeader from '../../../components/common/ListPageHeader';
 import StatCards from '../../../components/common/StatCards';
@@ -57,6 +57,20 @@ export default function AdminCourses() {
       setCourses((prev) => prev.map((c) => (c._id === course._id ? { ...c, status: nextStatus } : c)));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update course status');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleFeaturedToggle = async (course) => {
+    setBusyId(course._id);
+    setError('');
+    try {
+      const nextFeatured = !course.featured;
+      await api.patch(`/admin/academy/courses/${course._id}`, { featured: nextFeatured });
+      setCourses((prev) => prev.map((c) => (c._id === course._id ? { ...c, featured: nextFeatured } : c)));
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update featured status');
     } finally {
       setBusyId(null);
     }
@@ -134,6 +148,15 @@ export default function AdminCourses() {
                 <tr key={course._id}>
                   <td>
                     <div className="admin-table__title-cell">
+                      <button
+                        type="button"
+                        className={`course-star-toggle${course.featured ? ' is-active' : ''}`}
+                        disabled={busyId === course._id}
+                        title={course.featured ? 'Remove from Home page featured courses' : 'Feature on Home page'}
+                        onClick={() => handleFeaturedToggle(course)}
+                      >
+                        <Star size={18} fill={course.featured ? 'currentColor' : 'none'} aria-hidden="true" />
+                      </button>
                       {course.image_url ? (
                         <img src={course.image_url} alt="" className="admin-table__thumb" />
                       ) : (

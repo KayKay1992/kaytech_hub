@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { BookOpen } from 'lucide-react';
 import Reveal from '../common/Reveal';
 import CourseCard from '../courses/CourseCard';
+import EmptyState from '../common/EmptyState';
 import api from '../../api/axios';
 
 export default function CoursesOverview() {
@@ -10,12 +12,10 @@ export default function CoursesOverview() {
 
   useEffect(() => {
     api.get('/courses')
-      .then((res) => setCourses(res.data.courses.slice(0, 3)))
+      .then((res) => setCourses(res.data.courses.filter((c) => c.featured).slice(0, 4)))
       .catch(() => setCourses([]))
       .finally(() => setLoading(false));
   }, []);
-
-  if (!loading && courses.length === 0) return null;
 
   return (
     <section className="section">
@@ -27,18 +27,24 @@ export default function CoursesOverview() {
 
       {loading ? (
         <p>Loading courses...</p>
+      ) : courses.length === 0 ? (
+        <EmptyState
+          icon={BookOpen}
+          title="New courses coming soon"
+          message="Check back shortly — we're lining up our next featured picks."
+        />
       ) : (
-        <>
-          <div className="course-grid">
-            {courses.map((course, i) => (
-              <CourseCard course={course} index={i} key={course._id} />
-            ))}
-          </div>
+        <div className="course-grid">
+          {courses.map((course, i) => (
+            <CourseCard course={course} index={i} key={course._id} />
+          ))}
+        </div>
+      )}
 
-          <div className="courses-overview__more">
-            <Link to="/courses" className="btn btn--primary btn--lg">View More Courses</Link>
-          </div>
-        </>
+      {!loading && (
+        <div className="courses-overview__more">
+          <Link to="/courses" className="btn btn--primary btn--lg">View More Courses</Link>
+        </div>
       )}
     </section>
   );

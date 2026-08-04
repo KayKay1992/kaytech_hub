@@ -21,6 +21,8 @@ export default function Courses() {
         eyebrow="KayTech Academy"
         title="Courses"
         description="Practical, job-ready tech courses — every course bundles AI skills."
+        backTo="/"
+        backLabel="Back to Home"
       />
 
       <section className="section section--flush-top">

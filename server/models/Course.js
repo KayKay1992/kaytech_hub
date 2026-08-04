@@ -42,6 +42,10 @@ const courseSchema = new mongoose.Schema({
     enum: ['draft', 'published', 'archived'],
     default: 'draft',
   },
+  featured: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 });
