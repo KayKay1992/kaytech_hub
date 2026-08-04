@@ -11,6 +11,7 @@ const InstructorPayout = require('../models/InstructorPayout');
 const Certificate = require('../models/Certificate');
 const { uploadImage, uploadFile, deleteFile, keyFromUrl } = require('../utils/upload');
 const { buildCertificatePdf } = require('../utils/certificatePdf');
+const { sendPaymentConfirmedEmail, sendEnrollmentWelcomeEmail } = require('../utils/email');
 
 const COURSE_STATUSES = ['draft', 'published', 'archived'];
 const COHORT_STATUSES = ['upcoming', 'active', 'completed'];
@@ -539,7 +540,7 @@ const convertRegistration = async (req, res) => {
       return res.status(400).json({ message: 'This registration has already been converted' });
     }
 
-    const cohort = await Cohort.findById(cohort_id);
+    const cohort = await Cohort.findById(cohort_id).populate('course_id', 'title');
     if (!cohort) {
       return res.status(404).json({ message: 'Cohort not found' });
     }
@@ -562,6 +563,12 @@ const convertRegistration = async (req, res) => {
 
     registration.status = 'converted';
     await registration.save();
+
+    await sendEnrollmentWelcomeEmail(student.email, {
+      name: student.name,
+      courseTitle: cohort.course_id?.title || 'your course',
+      cohortName: cohort.name,
+    });
 
     res.status(201).json({ enrollment, registration });
   } catch (err) {
@@ -791,6 +798,16 @@ const createPayment = async (req, res) => {
       .populate('student_id', 'name email')
       .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } });
 
+    if (payment.status === 'paid' && populated.student_id) {
+      await sendPaymentConfirmedEmail(populated.student_id.email, {
+        name: populated.student_id.name,
+        amount: payment.amount,
+        itemLabel: `${populated.cohort_id?.course_id?.title || 'course'} — ${populated.cohort_id?.name || ''}`,
+        paymentMethod: payment.payment_method,
+        date: payment.paid_at,
+      });
+    }
+
     res.status(201).json({ payment: populated });
   } catch (err) {
     res.status(500).json({ message: 'Failed to create payment', error: err.message });
@@ -846,6 +863,16 @@ const updatePayment = async (req, res) => {
     const populated = await Payment.findById(payment._id)
       .populate('student_id', 'name email')
       .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } });
+
+    if (payment.status === 'paid' && !wasAlreadyPaid && populated.student_id) {
+      await sendPaymentConfirmedEmail(populated.student_id.email, {
+        name: populated.student_id.name,
+        amount: payment.amount,
+        itemLabel: `${populated.cohort_id?.course_id?.title || 'course'} — ${populated.cohort_id?.name || ''}`,
+        paymentMethod: payment.payment_method,
+        date: payment.paid_at,
+      });
+    }
 
     res.json({ payment: populated });
   } catch (err) {

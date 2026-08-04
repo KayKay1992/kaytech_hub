@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Building2 } from 'lucide-react';
+import { Building2, Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
 import ListPageHeader from '../../../components/common/ListPageHeader';
 import StatCards from '../../../components/common/StatCards';
@@ -45,6 +45,8 @@ export default function AdminSpaceSubscriptions() {
   const [paymentForm, setPaymentForm] = useState(emptyPaymentForm);
   const [paymentError, setPaymentError] = useState('');
   const [paymentSaving, setPaymentSaving] = useState(false);
+  const [confirmingPaymentId, setConfirmingPaymentId] = useState(null);
+  const [deletingPaymentId, setDeletingPaymentId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -72,6 +74,7 @@ export default function AdminSpaceSubscriptions() {
   }, [planIdFilter, durationFilter]);
 
   useEffect(() => {
+    setConfirmingPaymentId(null);
     if (!viewing) {
       setViewingPayments([]);
       return;
@@ -83,6 +86,34 @@ export default function AdminSpaceSubscriptions() {
       .finally(() => setViewingPaymentsLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewing?._id]);
+
+  const handleDeletePayment = async (paymentId) => {
+    setDeletingPaymentId(paymentId);
+    setPaymentError('');
+    try {
+      await api.delete(`/admin/space/subscriptions/${viewing._id}/payments/${paymentId}`);
+      setViewingPayments((prev) => prev.filter((p) => p._id !== paymentId));
+      // Deleting a payment can drop the running total back below the plan
+      // price, flipping payment_status back to pending — refresh the
+      // list/revenue and sync that into the open modal.
+      const params = {};
+      if (planIdFilter) params.plan_id = planIdFilter;
+      if (durationFilter) params.duration = durationFilter;
+      const [subsRes, revenueRes] = await Promise.all([
+        api.get('/admin/space/subscriptions', { params }),
+        api.get('/admin/space/revenue'),
+      ]);
+      setSubscriptions(subsRes.data.subscriptions);
+      setTotalRevenue(revenueRes.data.total);
+      const updated = subsRes.data.subscriptions.find((s) => s._id === viewing._id);
+      if (updated) setViewing((prev) => (prev ? { ...prev, payment_status: updated.payment_status } : prev));
+    } catch (err) {
+      setPaymentError(err.response?.data?.message || 'Failed to delete payment');
+    } finally {
+      setDeletingPaymentId(null);
+      setConfirmingPaymentId(null);
+    }
+  };
 
   const updateField = async (id, field, value) => {
     setBusyId(id);
@@ -275,6 +306,7 @@ export default function AdminSpaceSubscriptions() {
               {viewing.plan_id?.price ? ` of ${money(viewing.plan_id.price)} plan price` : ''}
               {viewingPayments.length > 0 ? ` · ${viewingPayments.length} payment${viewingPayments.length === 1 ? '' : 's'}` : ''}
             </p>
+            {paymentError && <p className="form-error">{paymentError}</p>}
             {viewingPaymentsLoading ? (
               <p className="payments-empty">Loading payments...</p>
             ) : viewingPayments.length === 0 ? (
@@ -289,6 +321,19 @@ export default function AdminSpaceSubscriptions() {
                       {p.note ? ` · ${p.note}` : ''}
                     </span>
                   </div>
+                  {confirmingPaymentId === p._id ? (
+                    <span className="confirm-delete">
+                      <span>Delete this payment?</span>
+                      <button type="button" className="btn btn--delete-decorated" disabled={deletingPaymentId === p._id} onClick={() => handleDeletePayment(p._id)}>
+                        <Trash2 size={14} /> {deletingPaymentId === p._id ? 'Deleting...' : 'Confirm'}
+                      </button>
+                      <button type="button" className="btn btn--ghost" onClick={() => setConfirmingPaymentId(null)}>Cancel</button>
+                    </span>
+                  ) : (
+                    <button type="button" className="btn btn--delete-decorated" title="Delete payment" onClick={() => setConfirmingPaymentId(p._id)}>
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               ))
             )}

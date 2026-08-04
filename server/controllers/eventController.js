@@ -1,5 +1,6 @@
 const Event = require('../models/Event');
 const EventRegistration = require('../models/EventRegistration');
+const { sendEventRegistrationEmail } = require('../utils/email');
 
 // Merges each event with how many EventRegistrations it has, in one grouped
 // query rather than N+1 counts.
@@ -72,6 +73,15 @@ const registerForEvent = async (req, res) => {
       email,
       phone,
       willing_to_pay_at_event: event.is_paid ? willing_to_pay_at_event : false,
+    });
+
+    await sendEventRegistrationEmail(email, {
+      fullName: full_name,
+      eventTitle: event.title,
+      eventDate: event.date,
+      location: event.location,
+      isPaid: event.is_paid,
+      price: event.price,
     });
 
     res.status(201).json({ registration });

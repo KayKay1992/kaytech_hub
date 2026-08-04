@@ -6,6 +6,7 @@ const {
   updateEvent,
   deleteEvent,
   listRegistrationsForEvent,
+  deleteRegistration,
 } = require('../controllers/adminEventController');
 const { protect, authorize } = require('../middleware/auth');
 const { imageUploadMiddleware } = require('../utils/upload');
@@ -22,5 +23,6 @@ router.get('/events/:id', getEvent);
 router.patch('/events/:id', eventImage, updateEvent);
 router.delete('/events/:id', deleteEvent);
 router.get('/events/:id/registrations', listRegistrationsForEvent);
+router.delete('/events/:id/registrations/:registrationId', deleteRegistration);
 
 module.exports = router;

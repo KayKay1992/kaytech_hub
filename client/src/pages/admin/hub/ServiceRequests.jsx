@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
 import ListPageHeader from '../../../components/common/ListPageHeader';
 import StatCards from '../../../components/common/StatCards';
@@ -39,6 +39,8 @@ export default function AdminServiceRequests() {
   const [paymentForm, setPaymentForm] = useState(emptyPaymentForm);
   const [paymentError, setPaymentError] = useState('');
   const [paymentSaving, setPaymentSaving] = useState(false);
+  const [confirmingPaymentId, setConfirmingPaymentId] = useState(null);
+  const [deletingPaymentId, setDeletingPaymentId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -61,6 +63,7 @@ export default function AdminServiceRequests() {
   }, [serviceIdFilter]);
 
   useEffect(() => {
+    setConfirmingPaymentId(null);
     if (!viewing) {
       setViewingPayments([]);
       return;
@@ -72,6 +75,20 @@ export default function AdminServiceRequests() {
       .finally(() => setViewingPaymentsLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewing?._id]);
+
+  const handleDeletePayment = async (paymentId) => {
+    setDeletingPaymentId(paymentId);
+    setPaymentError('');
+    try {
+      await api.delete(`/admin/services/requests/${viewing._id}/payments/${paymentId}`);
+      setViewingPayments((prev) => prev.filter((p) => p._id !== paymentId));
+    } catch (err) {
+      setPaymentError(err.response?.data?.message || 'Failed to delete payment');
+    } finally {
+      setDeletingPaymentId(null);
+      setConfirmingPaymentId(null);
+    }
+  };
 
   const updateStatus = async (id, status) => {
     setBusyId(id);
@@ -224,6 +241,7 @@ export default function AdminServiceRequests() {
               <strong>Payments recorded:</strong> {money(viewingPaymentsTotal)}
               {viewingPayments.length > 0 ? ` across ${viewingPayments.length} payment${viewingPayments.length === 1 ? '' : 's'}` : ''}
             </p>
+            {paymentError && <p className="form-error">{paymentError}</p>}
             {viewingPaymentsLoading ? (
               <p className="payments-empty">Loading payments...</p>
             ) : viewingPayments.length === 0 ? (
@@ -238,6 +256,19 @@ export default function AdminServiceRequests() {
                       {p.note ? ` · ${p.note}` : ''}
                     </span>
                   </div>
+                  {confirmingPaymentId === p._id ? (
+                    <span className="confirm-delete">
+                      <span>Delete this payment?</span>
+                      <button type="button" className="btn btn--delete-decorated" disabled={deletingPaymentId === p._id} onClick={() => handleDeletePayment(p._id)}>
+                        <Trash2 size={14} /> {deletingPaymentId === p._id ? 'Deleting...' : 'Confirm'}
+                      </button>
+                      <button type="button" className="btn btn--ghost" onClick={() => setConfirmingPaymentId(null)}>Cancel</button>
+                    </span>
+                  ) : (
+                    <button type="button" className="btn btn--delete-decorated" title="Delete payment" onClick={() => setConfirmingPaymentId(p._id)}>
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               ))
             )}

@@ -8,6 +8,7 @@ const {
   updateRequestStatus,
   listPaymentsForRequest,
   createPaymentForRequest,
+  deleteRequestPayment,
   getServiceRevenue,
 } = require('../controllers/adminServiceController');
 const { protect, authorize } = require('../middleware/auth');
@@ -30,6 +31,7 @@ router.get('/services/requests', listRequests);
 router.patch('/services/requests/:id', updateRequestStatus);
 router.get('/services/requests/:id/payments', listPaymentsForRequest);
 router.post('/services/requests/:id/payments', createPaymentForRequest);
+router.delete('/services/requests/:id/payments/:paymentId', deleteRequestPayment);
 router.get('/services/:id', getService);
 router.patch('/services/:id', serviceImages, updateService);
 

@@ -2,6 +2,7 @@ const ScholarshipProgram = require('../models/ScholarshipProgram');
 const ScholarshipApplication = require('../models/ScholarshipApplication');
 const Course = require('../models/Course');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
+const { sendScholarshipApprovedEmail, sendScholarshipRejectedEmail } = require('../utils/email');
 
 const PROGRAM_STATUSES = ['open', 'closed'];
 const APPLICATION_STATUSES = ['pending', 'approved', 'rejected'];
@@ -144,6 +145,7 @@ const updateApplication = async (req, res) => {
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }
+    const statusChangedTo = status !== undefined && status !== application.status ? status : null;
 
     if (assigned_course_id !== undefined) {
       if (assigned_course_id) {
@@ -157,6 +159,17 @@ const updateApplication = async (req, res) => {
     if (status !== undefined) application.status = status;
 
     await application.save();
+
+    if (statusChangedTo === 'approved') {
+      const course = application.assigned_course_id ? await Course.findById(application.assigned_course_id) : null;
+      await sendScholarshipApprovedEmail(application.email, {
+        applicantName: application.applicant_name,
+        courseTitle: course?.title || '',
+      });
+    } else if (statusChangedTo === 'rejected') {
+      await sendScholarshipRejectedEmail(application.email, { applicantName: application.applicant_name });
+    }
+
     res.json({ application });
   } catch (err) {
     res.status(500).json({ message: 'Failed to update application', error: err.message });

@@ -8,6 +8,7 @@ const {
   updateSubscription,
   listPaymentsForSubscription,
   createPaymentForSubscription,
+  deletePaymentForSubscription,
   getSpaceRevenue,
 } = require('../controllers/adminSpaceController');
 const { protect, authorize } = require('../middleware/auth');
@@ -24,6 +25,7 @@ router.get('/space/subscriptions', listSubscriptions);
 router.patch('/space/subscriptions/:id', updateSubscription);
 router.get('/space/subscriptions/:id/payments', listPaymentsForSubscription);
 router.post('/space/subscriptions/:id/payments', createPaymentForSubscription);
+router.delete('/space/subscriptions/:id/payments/:paymentId', deletePaymentForSubscription);
 router.get('/space/plans/:id', getPlan);
 router.patch('/space/plans/:id', imageUploadMiddleware.single('image'), updatePlan);
 

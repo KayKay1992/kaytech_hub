@@ -165,4 +165,29 @@ const listRegistrationsForEvent = async (req, res) => {
   }
 };
 
-module.exports = { listEvents, getEvent, createEvent, updateEvent, deleteEvent, listRegistrationsForEvent };
+// DELETE /api/admin/events/:id/registrations/:registrationId —
+// registration_count is computed live, so no other bookkeeping needed.
+const deleteRegistration = async (req, res) => {
+  try {
+    const registration = await EventRegistration.findOneAndDelete({
+      _id: req.params.registrationId,
+      event_id: req.params.id,
+    });
+    if (!registration) {
+      return res.status(404).json({ message: 'Registration not found' });
+    }
+    res.json({ message: 'Registration deleted', id: registration._id });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete registration', error: err.message });
+  }
+};
+
+module.exports = {
+  listEvents,
+  getEvent,
+  createEvent,
+  updateEvent,
+  deleteEvent,
+  listRegistrationsForEvent,
+  deleteRegistration,
+};

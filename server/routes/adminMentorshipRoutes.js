@@ -8,6 +8,7 @@ const {
   updateRegistration,
   listPaymentsForRegistration,
   createPaymentForRegistration,
+  deletePaymentForRegistration,
   getMentorshipRevenue,
 } = require('../controllers/adminMentorshipController');
 const { protect, authorize } = require('../middleware/auth');
@@ -24,6 +25,7 @@ router.get('/mentorship/registrations', listRegistrations);
 router.patch('/mentorship/registrations/:id', updateRegistration);
 router.get('/mentorship/registrations/:id/payments', listPaymentsForRegistration);
 router.post('/mentorship/registrations/:id/payments', createPaymentForRegistration);
+router.delete('/mentorship/registrations/:id/payments/:paymentId', deletePaymentForRegistration);
 router.get('/mentorship/:id', getProgram);
 router.patch('/mentorship/:id', imageUploadMiddleware.single('image'), updateProgram);
 

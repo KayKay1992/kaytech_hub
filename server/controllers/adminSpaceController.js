@@ -2,6 +2,7 @@ const WorkspacePlan = require('../models/WorkspacePlan');
 const WorkspaceSubscription = require('../models/WorkspaceSubscription');
 const WorkspacePayment = require('../models/WorkspacePayment');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
+const { sendPaymentConfirmedEmail } = require('../utils/email');
 
 const { DURATIONS } = WorkspacePlan;
 const { PAYMENT_METHODS } = WorkspacePayment;
@@ -239,6 +240,14 @@ const createPaymentForSubscription = async (req, res) => {
       note,
     });
 
+    await sendPaymentConfirmedEmail(subscription.email, {
+      name: subscription.full_name,
+      amount: payment.amount,
+      itemLabel: subscription.plan_id?.name ? `${subscription.plan_id.name} workspace plan` : 'workspace plan',
+      paymentMethod: payment.payment_method,
+      date: payment.date,
+    });
+
     const [{ total } = { total: 0 }] = await WorkspacePayment.aggregate([
       { $match: { workspace_subscription_id: subscription._id } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
@@ -258,6 +267,37 @@ const createPaymentForSubscription = async (req, res) => {
     res.status(201).json({ payment, subscription });
   } catch (err) {
     res.status(500).json({ message: 'Failed to record payment', error: err.message });
+  }
+};
+
+// DELETE /api/admin/space/subscriptions/:id/payments/:paymentId —
+// recomputes payment_status from the remaining total; doesn't touch
+// status/start_date/end_date once activated, since deactivating a live
+// subscription is a separate manual decision (via PATCH the subscription).
+const deletePaymentForSubscription = async (req, res) => {
+  try {
+    const payment = await WorkspacePayment.findOneAndDelete({
+      _id: req.params.paymentId,
+      workspace_subscription_id: req.params.id,
+    });
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+
+    const subscription = await WorkspaceSubscription.findById(req.params.id).populate('plan_id', 'price');
+    if (subscription) {
+      const [{ total } = { total: 0 }] = await WorkspacePayment.aggregate([
+        { $match: { workspace_subscription_id: subscription._id } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]);
+      const price = subscription.plan_id?.price || 0;
+      subscription.payment_status = total >= price ? 'paid' : 'pending';
+      await subscription.save();
+    }
+
+    res.json({ message: 'Payment deleted', id: payment._id });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete payment', error: err.message });
   }
 };
 
@@ -282,5 +322,6 @@ module.exports = {
   updateSubscription,
   listPaymentsForSubscription,
   createPaymentForSubscription,
+  deletePaymentForSubscription,
   getSpaceRevenue,
 };

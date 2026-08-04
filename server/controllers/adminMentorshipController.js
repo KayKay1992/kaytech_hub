@@ -2,6 +2,7 @@ const MentorshipProgram = require('../models/MentorshipProgram');
 const MentorshipRegistration = require('../models/MentorshipRegistration');
 const MentorshipPayment = require('../models/MentorshipPayment');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
+const { sendPaymentConfirmedEmail } = require('../utils/email');
 
 const { PAYMENT_METHODS } = MentorshipPayment;
 const PROGRAM_STATUSES = ['open', 'closed'];
@@ -164,7 +165,7 @@ const listPaymentsForRegistration = async (req, res) => {
 // via PATCH .../registrations/:id for edge cases like a waived fee.
 const createPaymentForRegistration = async (req, res) => {
   try {
-    const registration = await MentorshipRegistration.findById(req.params.id).populate('program_id', 'price');
+    const registration = await MentorshipRegistration.findById(req.params.id).populate('program_id', 'title price');
     if (!registration) {
       return res.status(404).json({ message: 'Registration not found' });
     }
@@ -185,6 +186,14 @@ const createPaymentForRegistration = async (req, res) => {
       note,
     });
 
+    await sendPaymentConfirmedEmail(registration.email, {
+      name: registration.full_name,
+      amount: payment.amount,
+      itemLabel: registration.program_id?.title ? `${registration.program_id.title} mentorship program` : 'mentorship program',
+      paymentMethod: payment.payment_method,
+      date: payment.date,
+    });
+
     const [{ total } = { total: 0 }] = await MentorshipPayment.aggregate([
       { $match: { mentorship_registration_id: registration._id } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
@@ -197,6 +206,36 @@ const createPaymentForRegistration = async (req, res) => {
     res.status(201).json({ payment, registration });
   } catch (err) {
     res.status(500).json({ message: 'Failed to record payment', error: err.message });
+  }
+};
+
+// DELETE /api/admin/mentorship/registrations/:id/payments/:paymentId —
+// recomputes payment_status afterward since it's derived from the running
+// total, not stored independently of the payment records.
+const deletePaymentForRegistration = async (req, res) => {
+  try {
+    const payment = await MentorshipPayment.findOneAndDelete({
+      _id: req.params.paymentId,
+      mentorship_registration_id: req.params.id,
+    });
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+
+    const registration = await MentorshipRegistration.findById(req.params.id).populate('program_id', 'price');
+    if (registration) {
+      const [{ total } = { total: 0 }] = await MentorshipPayment.aggregate([
+        { $match: { mentorship_registration_id: registration._id } },
+        { $group: { _id: null, total: { $sum: '$amount' } } },
+      ]);
+      const price = registration.program_id?.price || 0;
+      registration.payment_status = total >= price ? 'paid' : 'pending';
+      await registration.save();
+    }
+
+    res.json({ message: 'Payment deleted', id: payment._id });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete payment', error: err.message });
   }
 };
 
@@ -221,5 +260,6 @@ module.exports = {
   updateRegistration,
   listPaymentsForRegistration,
   createPaymentForRegistration,
+  deletePaymentForRegistration,
   getMentorshipRevenue,
 };

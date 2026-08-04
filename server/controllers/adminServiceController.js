@@ -2,6 +2,7 @@ const Service = require('../models/Service');
 const ServiceRequest = require('../models/ServiceRequest');
 const ServicePayment = require('../models/ServicePayment');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
+const { sendPaymentConfirmedEmail } = require('../utils/email');
 
 const { SERVICE_CATEGORIES } = Service;
 const { PAYMENT_METHODS } = ServicePayment;
@@ -231,7 +232,7 @@ const listPaymentsForRequest = async (req, res) => {
 // request are allowed (deposit + final payment, milestone billing, etc.)
 const createPaymentForRequest = async (req, res) => {
   try {
-    const request = await ServiceRequest.findById(req.params.id);
+    const request = await ServiceRequest.findById(req.params.id).populate('service_id', 'title');
     if (!request) {
       return res.status(404).json({ message: 'Service request not found' });
     }
@@ -252,9 +253,34 @@ const createPaymentForRequest = async (req, res) => {
       note,
     });
 
+    await sendPaymentConfirmedEmail(request.email, {
+      name: request.name,
+      amount: payment.amount,
+      itemLabel: request.service_id?.title || 'service request',
+      paymentMethod: payment.payment_method,
+      date: payment.date,
+    });
+
     res.status(201).json({ payment });
   } catch (err) {
     res.status(500).json({ message: 'Failed to record payment', error: err.message });
+  }
+};
+
+// DELETE /api/admin/services/requests/:id/payments/:paymentId — revenue is a
+// live aggregate sum, so removing a payment needs no other bookkeeping.
+const deleteRequestPayment = async (req, res) => {
+  try {
+    const payment = await ServicePayment.findOneAndDelete({
+      _id: req.params.paymentId,
+      service_request_id: req.params.id,
+    });
+    if (!payment) {
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+    res.json({ message: 'Payment deleted', id: payment._id });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete payment', error: err.message });
   }
 };
 
@@ -279,5 +305,6 @@ module.exports = {
   updateRequestStatus,
   listPaymentsForRequest,
   createPaymentForRequest,
+  deleteRequestPayment,
   getServiceRevenue,
 };
