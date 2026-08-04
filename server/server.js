@@ -42,6 +42,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const adminEventRoutes = require('./routes/adminEventRoutes');
 const forumRoutes = require('./routes/forumRoutes');
 const adminForumRoutes = require('./routes/adminForumRoutes');
+const assistantRoutes = require('./routes/assistantRoutes');
 
 const app = express();
 
@@ -90,6 +91,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/admin', adminEventRoutes);
 app.use('/api/forums', forumRoutes);
 app.use('/api/admin', adminForumRoutes);
+app.use('/api/assistant', assistantRoutes);
 
 // 404 handler
 app.use('/api', (req, res) => {

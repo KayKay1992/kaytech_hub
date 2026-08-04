@@ -67,10 +67,12 @@ import StudentCertificates from './pages/student/Certificates';
 import StudentSuccessStoryForm from './pages/student/SuccessStoryForm';
 import StudentForums from './pages/student/Forums';
 import StudentForumPost from './pages/student/ForumPost';
+import StudentAssistant from './pages/student/Assistant';
 import InstructorDashboard from './pages/instructor/Dashboard';
 import InstructorNotifications from './pages/instructor/Notifications';
 import InstructorForums from './pages/instructor/Forums';
 import InstructorForumPost from './pages/instructor/ForumPost';
+import InstructorAssistant from './pages/instructor/Assistant';
 import AdminCourses from './pages/admin/academy/Courses';
 import AdminCourseContent from './pages/admin/academy/CourseContent';
 import AdminCohorts from './pages/admin/academy/Cohorts';
@@ -137,6 +139,7 @@ function App() {
           <Route path="success-story" element={<StudentSuccessStoryForm />} />
           <Route path="forums/:forumType" element={<StudentForums />} />
           <Route path="forums/:forumType/:postId" element={<StudentForumPost />} />
+          <Route path="assistant" element={<StudentAssistant />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Route>
@@ -153,6 +156,7 @@ function App() {
           <Route path="academy/payouts" element={<InstructorPayouts />} />
           <Route path="forums/:forumType" element={<InstructorForums />} />
           <Route path="forums/:forumType/:postId" element={<InstructorForumPost />} />
+          <Route path="assistant" element={<InstructorAssistant />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Route>

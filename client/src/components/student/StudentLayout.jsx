@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Award, Bell, BookOpen, ClipboardCheck, LayoutDashboard, MessagesSquare } from 'lucide-react';
+import { Award, Bell, BookOpen, ClipboardCheck, LayoutDashboard, MessagesSquare, Sparkles } from 'lucide-react';
 import DashboardLayout from '../dashboard/DashboardLayout';
 import api from '../../api/axios';
 
@@ -9,6 +9,7 @@ const BASE_NAV_GROUPS = [
     items: [
       { to: '/student', label: 'Dashboard', end: true, icon: LayoutDashboard },
       { to: '/student/notifications', label: 'Notifications', icon: Bell },
+      { to: '/student/assistant', label: 'AI Tutor', icon: Sparkles },
     ],
   },
   {

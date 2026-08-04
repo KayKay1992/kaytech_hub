@@ -1,4 +1,4 @@
-import { Bell, BookOpen, CalendarCheck, ClipboardCheck, LayoutDashboard, MessagesSquare, UsersRound, Wallet } from 'lucide-react';
+import { Bell, BookOpen, CalendarCheck, ClipboardCheck, LayoutDashboard, MessagesSquare, Sparkles, UsersRound, Wallet } from 'lucide-react';
 import DashboardLayout from '../dashboard/DashboardLayout';
 
 // Students list is a placeholder until that module is built.
@@ -8,6 +8,7 @@ const INSTRUCTOR_NAV_GROUPS = [
     items: [
       { to: '/instructor', label: 'Dashboard', end: true, icon: LayoutDashboard },
       { to: '/instructor/notifications', label: 'Notifications', icon: Bell },
+      { to: '/instructor/assistant', label: 'AI Lesson Assistant', icon: Sparkles },
     ],
   },
   {
