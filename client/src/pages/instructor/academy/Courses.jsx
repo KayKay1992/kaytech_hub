@@ -72,7 +72,7 @@ export default function InstructorCourses() {
           message="An admin needs to assign you to a course cohort before it shows up here."
         />
       ) : (
-        <div className="instructor-course-grid">
+        <div className="dashboard-course-grid">
           {courses.map((course, i) => {
             const cohortCount = cohortCountByCourseId[course._id] || 0;
             const studentCount = studentCountByCourseId[course._id] || 0;

@@ -3,6 +3,7 @@ const Cohort = require('../models/Cohort');
 const Module = require('../models/Module');
 const Lesson = require('../models/Lesson');
 const CourseRegistration = require('../models/CourseRegistration');
+const CourseReview = require('../models/CourseReview');
 
 const EXPERIENCE_LEVELS = ['beginner', 'intermediate', 'advanced'];
 
@@ -48,7 +49,12 @@ const getCourse = async (req, res) => {
       lessons: approvedLessons.filter((lesson) => String(lesson.module_id) === String(mod._id)).map((l) => ({ _id: l._id, title: l.title })),
     }));
 
-    res.json({ course, cohorts, modules });
+    // Approved-only, newest first — the public "Reviews" section.
+    const reviews = await CourseReview.find({ course_id: course._id, status: 'approved' })
+      .populate('student_id', 'name')
+      .sort({ published_at: -1 });
+
+    res.json({ course, cohorts, modules, reviews });
   } catch (err) {
     res.status(500).json({ message: 'Failed to load course', error: err.message });
   }

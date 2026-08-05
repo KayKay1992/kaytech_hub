@@ -3,12 +3,14 @@ import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
 import SEO from '../components/common/SEO';
 import Reveal from '../components/common/Reveal';
+import StarRating from '../components/common/StarRating';
 
 export default function CourseDetail() {
   const { id } = useParams();
   const [course, setCourse] = useState(null);
   const [cohorts, setCohorts] = useState([]);
   const [modules, setModules] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -18,6 +20,7 @@ export default function CourseDetail() {
         setCourse(res.data.course);
         setCohorts(res.data.cohorts);
         setModules(res.data.modules);
+        setReviews(res.data.reviews);
       })
       .catch((err) => setError(err.response?.data?.message || 'Course not found'))
       .finally(() => setLoading(false));
@@ -73,6 +76,15 @@ export default function CourseDetail() {
           <p className="course-hero__description">{course.description}</p>
 
           <div className="course-hero__stats">
+            {course.review_count > 0 && (
+              <div className="course-hero__stat">
+                <span className="course-hero__stat-label">Rating</span>
+                <span className="course-hero__stat-value course-hero__rating">
+                  <StarRating value={course.average_rating} size={15} />
+                  {course.average_rating.toFixed(1)} ({course.review_count} review{course.review_count !== 1 ? 's' : ''})
+                </span>
+              </div>
+            )}
             {course.duration && (
               <div className="course-hero__stat">
                 <span className="course-hero__stat-label">Duration</span>
@@ -145,6 +157,26 @@ export default function CourseDetail() {
                   </div>
                 </div>
               ))}
+            </Reveal>
+          )}
+
+          {reviews.length > 0 && (
+            <Reveal as="div" className="course-section" delay={0.25}>
+              <h2>Reviews</h2>
+              <div className="review-list">
+                {reviews.map((review) => (
+                  <div className="review-card" key={review._id}>
+                    <div className="review-card__header">
+                      <span className="review-card__author">{review.student_id?.name || 'Student'}</span>
+                      <span className="review-card__date">
+                        {new Date(review.published_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                      </span>
+                    </div>
+                    <StarRating value={review.rating} size={14} />
+                    <p className="review-card__text">{review.review_text}</p>
+                  </div>
+                ))}
+              </div>
             </Reveal>
           )}
         </div>

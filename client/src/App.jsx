@@ -46,6 +46,7 @@ import ScholarshipForm from './pages/admin/ScholarshipForm';
 import AdminScholarshipApplications from './pages/admin/ScholarshipApplications';
 import AdminNotifications from './pages/admin/Notifications';
 import AdminSuccessStories from './pages/admin/SuccessStories';
+import AdminCourseReviews from './pages/admin/CourseReviews';
 import AdminTestimonials from './pages/admin/Testimonials';
 import AdminBlogPosts from './pages/admin/BlogPosts';
 import BlogPostForm from './pages/admin/BlogPostForm';
@@ -65,6 +66,7 @@ import StudentCourseContent from './pages/student/CourseContent';
 import StudentAssignments from './pages/student/Assignments';
 import StudentCertificates from './pages/student/Certificates';
 import StudentSuccessStoryForm from './pages/student/SuccessStoryForm';
+import StudentCourseReviewForm from './pages/student/CourseReviewForm';
 import StudentForums from './pages/student/Forums';
 import StudentForumPost from './pages/student/ForumPost';
 import StudentAssistant from './pages/student/Assistant';
@@ -137,6 +139,7 @@ function App() {
           <Route path="assignments" element={<StudentAssignments />} />
           <Route path="certificates" element={<StudentCertificates />} />
           <Route path="success-story" element={<StudentSuccessStoryForm />} />
+          <Route path="reviews/new" element={<StudentCourseReviewForm />} />
           <Route path="forums/:forumType" element={<StudentForums />} />
           <Route path="forums/:forumType/:postId" element={<StudentForumPost />} />
           <Route path="assistant" element={<StudentAssistant />} />
@@ -176,6 +179,7 @@ function App() {
           <Route path="scholarships/:id/applications" element={<AdminScholarshipApplications />} />
           <Route path="notifications" element={<AdminNotifications />} />
           <Route path="success-stories" element={<AdminSuccessStories />} />
+          <Route path="course-reviews" element={<AdminCourseReviews />} />
           <Route path="testimonials" element={<AdminTestimonials />} />
           <Route path="blog" element={<AdminBlogPosts />} />
           <Route path="blog/new" element={<BlogPostForm />} />

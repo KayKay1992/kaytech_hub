@@ -27,7 +27,7 @@ export default function StudentCourses() {
         ) : enrollments.length === 0 ? (
           <p>You're not enrolled in any cohort yet — an admin needs to enroll you once you've signed up.</p>
         ) : (
-          <div className="course-grid">
+          <div className="dashboard-course-grid">
             {enrollments.map((enr, i) => {
               const course = enr.cohort_id?.course_id;
               const instructor = enr.cohort_id?.instructor_id;

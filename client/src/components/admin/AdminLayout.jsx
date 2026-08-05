@@ -43,6 +43,7 @@ const ADMIN_NAV_GROUPS = [
       { to: '/admin/academy/payouts', label: 'Payouts', icon: Wallet },
       { to: '/admin/scholarships', label: 'Scholarships', icon: Award },
       { to: '/admin/success-stories', label: 'Success Stories', icon: Star },
+      { to: '/admin/course-reviews', label: 'Course Reviews', icon: Star },
     ],
   },
   {

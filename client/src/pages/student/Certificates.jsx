@@ -3,15 +3,30 @@ import { Link } from 'react-router-dom';
 import api from '../../api/axios';
 import PageHeader from '../../components/common/PageHeader';
 import Reveal from '../../components/common/Reveal';
+import StatusPill from '../../components/admin/StatusPill';
+
+const REVIEW_STATUS_TONE = { pending: 'amber', approved: 'teal', rejected: 'danger' };
+const REVIEW_STATUS_LABEL = { pending: 'Pending Review', approved: 'Published', rejected: 'Not Published' };
 
 export default function StudentCertificates() {
   const [certificates, setCertificates] = useState([]);
+  const [reviewsByCourse, setReviewsByCourse] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get('/student/certificates')
-      .then((res) => setCertificates(res.data.certificates))
+    Promise.all([
+      api.get('/student/certificates'),
+      api.get('/student/course-reviews').catch(() => ({ data: { reviews: [] } })),
+    ])
+      .then(([certRes, reviewsRes]) => {
+        setCertificates(certRes.data.certificates);
+        const map = {};
+        reviewsRes.data.reviews.forEach((r) => {
+          if (r.course_id?._id) map[r.course_id._id] = r;
+        });
+        setReviewsByCourse(map);
+      })
       .catch((err) => setError(err.response?.data?.message || 'Failed to load your certificates'))
       .finally(() => setLoading(false));
   }, []);
@@ -35,22 +50,39 @@ export default function StudentCertificates() {
                     <th>Course</th>
                     <th>Cohort</th>
                     <th>Issued</th>
+                    <th>Your Review</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {certificates.map((cert, i) => (
-                    <Reveal as="tr" key={cert._id} index={i}>
-                      <td>{cert.cohort_id?.course_id?.title || '—'}</td>
-                      <td>{cert.cohort_id?.name || '—'}</td>
-                      <td className="payments-date">{new Date(cert.issued_at).toLocaleDateString()}</td>
-                      <td>
-                        <a href={cert.certificate_url} target="_blank" rel="noreferrer" className="btn btn--primary">
-                          Download
-                        </a>
-                      </td>
-                    </Reveal>
-                  ))}
+                  {certificates.map((cert, i) => {
+                    const courseId = cert.cohort_id?.course_id?._id;
+                    const review = courseId ? reviewsByCourse[courseId] : null;
+                    return (
+                      <Reveal as="tr" key={cert._id} index={i}>
+                        <td>{cert.cohort_id?.course_id?.title || '—'}</td>
+                        <td>{cert.cohort_id?.name || '—'}</td>
+                        <td className="payments-date">{new Date(cert.issued_at).toLocaleDateString()}</td>
+                        <td>
+                          {review ? (
+                            <StatusPill tone={REVIEW_STATUS_TONE[review.status]}>{REVIEW_STATUS_LABEL[review.status]}</StatusPill>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td className="admin-table__actions">
+                          <a href={cert.certificate_url} target="_blank" rel="noreferrer" className="btn btn--primary">
+                            Download
+                          </a>
+                          {courseId && (
+                            <Link to={`/student/reviews/new?course=${courseId}`} className="btn btn--ghost">
+                              {review ? 'Edit Review' : 'Write a Review'}
+                            </Link>
+                          )}
+                        </td>
+                      </Reveal>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

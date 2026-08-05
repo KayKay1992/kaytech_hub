@@ -46,6 +46,18 @@ const courseSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  // Denormalized from approved CourseReviews — recalculated by
+  // recalcCourseRating() (server/utils/courseRating.js) any time a review's
+  // status changes, so course cards/listing pages never need a live
+  // aggregate query.
+  average_rating: {
+    type: Number,
+    default: 0,
+  },
+  review_count: {
+    type: Number,
+    default: 0,
+  },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 });

@@ -2857,10 +2857,12 @@ a:hover { color: var(--color-amber); }
   .course-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
-/* Instructor's course grid needs wider cards than the 4-up student grid —
-   its footer carries price + status pill + CTA, not just a CTA. Fluid
-   auto-fit instead of a fixed column count so it never re-cramps. */
-.instructor-course-grid {
+/* Dashboard course cards (Student "My Courses", Instructor "My Courses")
+   carry more footer content than the plain public course card — progress
+   bar + lesson count + status pill + CTA, or price + status pill + CTA —
+   so they need wider cards than the public 4-up .course-grid allows.
+   Fluid auto-fit instead of a fixed column count so it never re-cramps. */
+.dashboard-course-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 24px;
@@ -3433,3 +3435,43 @@ a:hover { color: var(--color-amber); }
   font-size: 0.85rem;
   line-height: 1.5;
 }
+
+/* Shared star rating (StarRating.jsx) — display mode on course cards/detail
+   page/admin table, clickable input mode on the student review form */
+.star-rating { display: inline-flex; align-items: center; gap: 2px; color: var(--color-amber); vertical-align: middle; }
+.star-rating svg { display: block; }
+.star-rating--input { gap: 4px; }
+.star-rating--input .star-rating__btn {
+  display: flex;
+  background: none;
+  border: none;
+  padding: 2px;
+  margin: 0;
+  cursor: pointer;
+  color: inherit;
+  transition: transform 0.15s ease;
+}
+.star-rating--input .star-rating__btn:hover { transform: scale(1.15); }
+
+/* Course card rating badge — only rendered when review_count > 0 */
+.course-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+.course-card__rating-value { font-weight: 600; color: var(--color-text); }
+
+/* Course detail hero rating stat */
+.course-hero__rating { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Course detail "Reviews" section */
+.review-list { display: flex; flex-direction: column; gap: 22px; }
+.review-card { padding-bottom: 22px; border-bottom: 1px solid var(--color-border); }
+.review-card:last-child { border-bottom: none; padding-bottom: 0; }
+.review-card__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.review-card__author { font-weight: 600; }
+.review-card__date { font-size: 0.82rem; color: var(--color-text-muted); white-space: nowrap; }
+.review-card__text { margin: 0; color: var(--color-text); }

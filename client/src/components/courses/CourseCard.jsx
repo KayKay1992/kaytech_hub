@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import Reveal from '../common/Reveal';
+import StarRating from '../common/StarRating';
 
 // Shared course card — plain image up top (category badge pinned to its
 // top-right corner), then title/description/AI tag/price+CTA in the card
@@ -19,6 +20,13 @@ export default function CourseCard({ course, index = 0 }) {
 
       <div className="course-card__body">
         <h3 className="course-card__title">{course.title}</h3>
+        {course.review_count > 0 && (
+          <div className="course-card__rating">
+            <StarRating value={course.average_rating} size={14} />
+            <span className="course-card__rating-value">{course.average_rating.toFixed(1)}</span>
+            <span>({course.review_count})</span>
+          </div>
+        )}
         <p className="course-card__description">{course.description}</p>
         <span className="badge badge--ai course-card__ai-tag">&lt;AI_SKILLS/&gt;</span>
 

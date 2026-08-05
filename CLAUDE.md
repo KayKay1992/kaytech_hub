@@ -88,6 +88,9 @@ Password reset (`PasswordResetToken`, emailed via Resend) is separate from the i
 ## Community Forums — already built
 Two forums, **membership computed dynamically from real Enrollment/Certificate records, never cached**: Student Forum (any student with an active, uncertified enrollment; auto-loses access once certified for that course) and Alumni Forum (any student with at least one Certificate — can overlap with Student Forum membership if currently taking a new course). Instructors/Admin are always members of both. Admin can soft-delete posts/replies (`status: removed`, with reason) and ban a student from a specific forum independently (`User.forum_ban_student` / `forum_ban_alumni`) without deleting their account.
 
+## AI Tutor / AI Lesson Assistant — already built
+One shared chat component powers two contexts via the Google Gemini API free tier (`gemini-2.5-flash` — NOT `gemini-2.5-pro`, its free tier is effectively gone). Students get "AI Tutor" (concept help, encouraging tone); Instructors get "AI Lesson Assistant" (structured, ready-to-use lesson-note drafting). Single `ChatMessage` model (`user_id`, `context: student/instructor`, `role: user/assistant`, `content`) — history stays scoped per user per context. Responses are rendered with `react-markdown` (Gemini returns markdown — don't let raw `*`/`**` show as literal text). 429 rate-limit errors from Gemini's free tier are caught and shown as a friendly "busy, try again" message, with the send button disabled mid-request to avoid burning the daily quota. Note: Google may use free-tier prompts/responses to improve their models — flagged for Privacy Policy review.
+
 ## Conventions
 - Every model that's admin-created and shown publicly (Course, ScholarshipProgram, Service, MentorshipProgram, WorkspacePlan, BlogPost) has an `image_url` field, set via the shared upload utility.
 - No video anywhere in this app. Lessons use notes (PDF), resources (links/files), and coding exercises — not video.
@@ -103,6 +106,9 @@ R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET_NAME=
 R2_ENDPOINT_URL=
+RESEND_API_KEY=
+FRONTEND_URL=
+GEMINI_API_KEY=
 ```
 
 ## Commands
