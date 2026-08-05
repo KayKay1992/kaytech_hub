@@ -24,6 +24,10 @@ const enrollmentSchema = new mongoose.Schema({
   // completion progress bar. No separate Assignment/Attendance model exists
   // yet, so this is the only progress signal available today.
   completed_lesson_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' }],
+  // Last time an outstanding-balance reminder email went out for this
+  // enrollment (automatic or admin-triggered) — gates the reminder cron
+  // from re-sending too often and is shown on the admin Payments page.
+  last_reminder_sent_at: { type: Date, default: null },
 }, {
   timestamps: { createdAt: 'enrolled_at', updatedAt: 'updated_at' },
 });

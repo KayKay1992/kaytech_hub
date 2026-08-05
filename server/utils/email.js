@@ -170,6 +170,26 @@ const sendCohortWaitlistOpenEmail = async (to, { name, courseTitle, cohortName, 
   });
 };
 
+// OUTSTANDING BALANCE REMINDER ------------------------------------------------
+
+const sendPaymentReminderEmail = async (to, { name, courseTitle, cohortName, amountPaid, balanceRemaining }) => {
+  await safeSend({
+    from: FROM_ADDRESS,
+    to,
+    subject: `Friendly reminder: outstanding balance for ${courseTitle}`,
+    html: wrapEmail(`
+      <h2 style="color: #10142B;">Hi ${name}, just a friendly reminder</h2>
+      <p>You have an outstanding balance of <strong>${money(balanceRemaining)}</strong> for <strong>${courseTitle}</strong>${cohortName ? ` (${cohortName})` : ''}.</p>
+      <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <tr><td style="padding: 8px 0; color: #5B6072;">Paid so far</td><td style="padding: 8px 0; text-align: right; font-weight: 600;">${money(amountPaid)}</td></tr>
+        <tr><td style="padding: 8px 0; color: #5B6072; border-top: 1px solid #e5e5e5;">Balance remaining</td><td style="padding: 8px 0; text-align: right; font-weight: 600; border-top: 1px solid #e5e5e5;">${money(balanceRemaining)}</td></tr>
+      </table>
+      <p>You can complete payment via bank transfer — please reach out if you have any questions or need to arrange installments.</p>
+      <p>Thanks for being part of KayTech Hub!</p>
+    `),
+  });
+};
+
 module.exports = {
   sendPasswordResetEmail,
   sendScholarshipApprovedEmail,
@@ -178,4 +198,5 @@ module.exports = {
   sendEnrollmentWelcomeEmail,
   sendEventRegistrationEmail,
   sendCohortWaitlistOpenEmail,
+  sendPaymentReminderEmail,
 };

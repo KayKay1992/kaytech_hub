@@ -51,6 +51,7 @@ const adminCorporateRoutes = require('./routes/adminCorporateRoutes');
 const app = express();
 
 connectDB();
+require('./jobs/paymentReminderCron');
 
 // Needed so express-rate-limit reads the real client IP (X-Forwarded-For)
 // instead of the reverse proxy's IP once deployed (Render, Railway, etc.).

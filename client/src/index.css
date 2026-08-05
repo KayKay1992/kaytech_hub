@@ -1890,6 +1890,8 @@ a:hover { color: var(--color-amber); }
 .payments-search input { min-width: 260px; }
 .payments-muted { color: var(--color-text-muted); font-size: 0.82rem; }
 .payments-muted--paid { color: var(--color-teal); font-weight: 600; }
+.payments-reminder-action { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.payments-reminder-confirm { color: var(--color-teal); }
 .payments-amount { font-family: var(--font-heading); font-weight: 600; }
 .payments-amount-cell { white-space: normal; min-width: 170px; vertical-align: top; padding-top: 14px; }
 .payments-balance-track {

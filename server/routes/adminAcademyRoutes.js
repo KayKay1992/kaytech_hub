@@ -26,6 +26,7 @@ const {
   createPayment,
   updatePayment,
   deletePayment,
+  sendPaymentReminder,
   listPayouts,
   payInstructor,
   generateCertificate,
@@ -74,6 +75,7 @@ router.get('/academy/payments', listPayments);
 router.post('/academy/payments', createPayment);
 router.patch('/academy/payments/:id', updatePayment);
 router.delete('/academy/payments/:id', deletePayment);
+router.post('/academy/enrollments/:id/send-reminder', sendPaymentReminder);
 
 router.get('/academy/payouts', listPayouts);
 router.post('/academy/payouts/:id/pay', payInstructor);

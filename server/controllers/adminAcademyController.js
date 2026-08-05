@@ -13,6 +13,7 @@ const CohortWaitlistEntry = require('../models/CohortWaitlistEntry');
 const { uploadImage, uploadFile, deleteFile, keyFromUrl } = require('../utils/upload');
 const { buildCertificatePdf } = require('../utils/certificatePdf');
 const { sendPaymentConfirmedEmail, sendEnrollmentWelcomeEmail, sendCohortWaitlistOpenEmail } = require('../utils/email');
+const { sendManualReminder } = require('../services/paymentReminderService');
 
 const COURSE_STATUSES = ['draft', 'published', 'archived'];
 const COHORT_STATUSES = ['upcoming', 'active', 'completed'];
@@ -913,6 +914,17 @@ const deletePayment = async (req, res) => {
   }
 };
 
+// POST /api/admin/academy/enrollments/:id/send-reminder — admin-triggered
+// outstanding-balance reminder, outside the daily automatic schedule.
+const sendPaymentReminder = async (req, res) => {
+  try {
+    const enrollment = await sendManualReminder(req.params.id);
+    res.json({ enrollment });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message || 'Failed to send reminder' });
+  }
+};
+
 // ---------- Instructor Payouts (event-driven ledger, paid offline) ----------
 
 // GET /api/admin/academy/payouts?cohort_id=... — one row per cohort,
@@ -1217,6 +1229,7 @@ module.exports = {
   createPayment,
   updatePayment,
   deletePayment,
+  sendPaymentReminder,
   listPayouts,
   payInstructor,
   generateCertificate,

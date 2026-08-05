@@ -48,8 +48,9 @@ function InstallmentList({ payments, onMarkPaid, onDelete, busyId }) {
   );
 }
 
-function EnrollmentRow({ enr, onAddInstallment, onMarkPaid, onDelete, busyId }) {
+function EnrollmentRow({ enr, onAddInstallment, onMarkPaid, onDelete, onSendReminder, busyId, reminderBusyId, justSentAt }) {
   const [expanded, setExpanded] = useState(false);
+  const canRemind = enr.status !== 'dropped' && enr.balance_remaining > 0;
 
   return (
     <>
@@ -61,17 +62,39 @@ function EnrollmentRow({ enr, onAddInstallment, onMarkPaid, onDelete, busyId }) 
         <td className="is-numeric payments-amount">{money(enr.balance_remaining)}</td>
         <td><PaymentStatusBadge status={enr.payment_status} /></td>
         <td>
+          <span className="payments-muted">
+            {enr.last_reminder_sent_at ? new Date(enr.last_reminder_sent_at).toLocaleDateString() : 'Never'}
+          </span>
+        </td>
+        <td>
           <div className="admin-table__actions">
             <button type="button" className="btn btn--primary" onClick={() => onAddInstallment(enr)}>+ Installment</button>
             <button type="button" className="btn btn--ghost" onClick={() => setExpanded((v) => !v)}>
               {expanded ? 'Hide History' : `History (${enr.payments?.length || 0})`}
             </button>
+            {canRemind && (
+              <span className="payments-reminder-action">
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  disabled={reminderBusyId === enr._id}
+                  onClick={() => onSendReminder(enr)}
+                >
+                  {reminderBusyId === enr._id ? 'Sending...' : 'Send Reminder Now'}
+                </button>
+                {justSentAt && (
+                  <span className="payments-muted payments-reminder-confirm">
+                    Reminder sent on {justSentAt}
+                  </span>
+                )}
+              </span>
+            )}
           </div>
         </td>
       </tr>
       {expanded && (
         <tr className="payout-history-tr">
-          <td colSpan={7}>
+          <td colSpan={8}>
             <InstallmentList payments={enr.payments} onMarkPaid={onMarkPaid} onDelete={onDelete} busyId={busyId} />
           </td>
         </tr>
@@ -89,6 +112,8 @@ export default function AdminPayments() {
   const [tab, setTab] = useState('outstanding');
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [reminderBusyId, setReminderBusyId] = useState(null);
+  const [justSentReminders, setJustSentReminders] = useState({});
 
   const [addingTo, setAddingTo] = useState(null);
   const [installmentForm, setInstallmentForm] = useState(emptyInstallmentForm);
@@ -199,6 +224,21 @@ export default function AdminPayments() {
     }
   };
 
+  const handleSendReminder = async (enr) => {
+    setReminderBusyId(enr._id);
+    setError('');
+    try {
+      const res = await api.post(`/admin/academy/enrollments/${enr._id}/send-reminder`);
+      const sentAt = res.data.enrollment?.last_reminder_sent_at;
+      setJustSentReminders((m) => ({ ...m, [enr._id]: sentAt ? new Date(sentAt).toLocaleDateString() : new Date().toLocaleDateString() }));
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send reminder');
+    } finally {
+      setReminderBusyId(null);
+    }
+  };
+
   const handleDelete = async (paymentId) => {
     setBusyId(paymentId);
     setError('');
@@ -281,6 +321,7 @@ export default function AdminPayments() {
                 <th className="is-numeric">Paid</th>
                 <th className="is-numeric">Balance</th>
                 <th>Status</th>
+                <th>Last Reminder</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -292,7 +333,10 @@ export default function AdminPayments() {
                   onAddInstallment={openAdd}
                   onMarkPaid={openMarkPaid}
                   onDelete={handleDelete}
+                  onSendReminder={handleSendReminder}
                   busyId={busyId}
+                  reminderBusyId={reminderBusyId}
+                  justSentAt={justSentReminders[enr._id]}
                 />
               ))}
             </tbody>
