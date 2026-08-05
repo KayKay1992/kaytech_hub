@@ -1,5 +1,6 @@
 const ForumPost = require('../models/ForumPost');
 const ForumReply = require('../models/ForumReply');
+const { logAction } = require('../utils/auditLog');
 
 const FORUM_TYPES = ['student', 'alumni'];
 const STATUSES = ['active', 'removed'];
@@ -56,6 +57,14 @@ const removePost = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'forum_post.removed',
+      target_type: 'ForumPost',
+      target_id: post._id,
+      details: `Removed a post by ${post.author_id?.name || 'a user'} in the ${post.forum_type} forum — reason: ${reason}`,
+    });
+
     res.json({ post });
   } catch (err) {
     res.status(500).json({ message: 'Failed to remove post', error: err.message });
@@ -108,6 +117,14 @@ const removeReply = async (req, res) => {
     if (!reply) {
       return res.status(404).json({ message: 'Reply not found' });
     }
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'forum_reply.removed',
+      target_type: 'ForumReply',
+      target_id: reply._id,
+      details: `Removed a reply by ${reply.author_id?.name || 'a user'} in the ${reply.post_id?.forum_type || ''} forum — reason: ${reason}`,
+    });
 
     res.json({ reply });
   } catch (err) {

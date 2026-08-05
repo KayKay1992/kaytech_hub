@@ -14,6 +14,7 @@ const { uploadImage, uploadFile, deleteFile, keyFromUrl } = require('../utils/up
 const { buildCertificatePdf } = require('../utils/certificatePdf');
 const { sendPaymentConfirmedEmail, sendEnrollmentWelcomeEmail, sendCohortWaitlistOpenEmail } = require('../utils/email');
 const { sendManualReminder } = require('../services/paymentReminderService');
+const { logAction } = require('../utils/auditLog');
 
 const COURSE_STATUSES = ['draft', 'published', 'archived'];
 const COHORT_STATUSES = ['upcoming', 'active', 'completed'];
@@ -213,6 +214,7 @@ const updateCourse = async (req, res) => {
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
+    const wasPublished = course.status === 'published';
 
     if (title !== undefined) course.title = title;
     if (description !== undefined) course.description = description;
@@ -232,6 +234,17 @@ const updateCourse = async (req, res) => {
     }
 
     await course.save();
+
+    if (!wasPublished && course.status === 'published') {
+      await logAction({
+        actor_id: req.user._id,
+        action_type: 'course.published',
+        target_type: 'Course',
+        target_id: course._id,
+        details: `Published "${course.title}"`,
+      });
+    }
+
     res.json({ course });
   } catch (err) {
     res.status(500).json({ message: 'Failed to update course', error: err.message });
@@ -433,6 +446,14 @@ const reviewModule = async (req, res) => {
     mod.rejection_reason = action === 'reject' ? (rejection_reason || '') : '';
     await mod.save();
 
+    await logAction({
+      actor_id: req.user._id,
+      action_type: action === 'approve' ? 'module.approved' : 'module.rejected',
+      target_type: 'Module',
+      target_id: mod._id,
+      details: `${action === 'approve' ? 'Approved' : 'Rejected'} module "${mod.title}"${action === 'reject' && rejection_reason ? ` — ${rejection_reason}` : ''}`,
+    });
+
     res.json({ module: mod });
   } catch (err) {
     res.status(500).json({ message: 'Failed to review module', error: err.message });
@@ -455,6 +476,14 @@ const reviewLesson = async (req, res) => {
     lesson.status = action === 'approve' ? 'approved' : 'rejected';
     lesson.rejection_reason = action === 'reject' ? (rejection_reason || '') : '';
     await lesson.save();
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: action === 'approve' ? 'lesson.approved' : 'lesson.rejected',
+      target_type: 'Lesson',
+      target_id: lesson._id,
+      details: `${action === 'approve' ? 'Approved' : 'Rejected'} lesson "${lesson.title}"${action === 'reject' && rejection_reason ? ` — ${rejection_reason}` : ''}`,
+    });
 
     res.json({ lesson });
   } catch (err) {
@@ -815,6 +844,16 @@ const createPayment = async (req, res) => {
       .populate('student_id', 'name email')
       .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } });
 
+    if (payment.status === 'paid') {
+      await logAction({
+        actor_id: req.user._id,
+        action_type: 'payment.marked_paid',
+        target_type: 'Payment',
+        target_id: payment._id,
+        details: `Marked ₦${payment.amount.toLocaleString()} installment as paid for ${populated.student_id?.name || 'student'} (${populated.cohort_id?.name || 'cohort'})`,
+      });
+    }
+
     if (payment.status === 'paid' && populated.student_id) {
       await sendPaymentConfirmedEmail(populated.student_id.email, {
         name: populated.student_id.name,
@@ -880,6 +919,16 @@ const updatePayment = async (req, res) => {
     const populated = await Payment.findById(payment._id)
       .populate('student_id', 'name email')
       .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } });
+
+    if (payment.status === 'paid' && !wasAlreadyPaid) {
+      await logAction({
+        actor_id: req.user._id,
+        action_type: 'payment.marked_paid',
+        target_type: 'Payment',
+        target_id: payment._id,
+        details: `Marked ₦${payment.amount.toLocaleString()} installment as paid for ${populated.student_id?.name || 'student'} (${populated.cohort_id?.name || 'cohort'})`,
+      });
+    }
 
     if (payment.status === 'paid' && !wasAlreadyPaid && populated.student_id) {
       await sendPaymentConfirmedEmail(populated.student_id.email, {
@@ -1002,6 +1051,14 @@ const payInstructor = async (req, res) => {
       .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } })
       .populate('transactions.student_id', 'name');
 
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'payout.marked_paid',
+      target_type: 'InstructorPayout',
+      target_id: payout._id,
+      details: `Paid out ₦${amountPaidOut.toLocaleString()} to ${populated.instructor_id?.name || 'instructor'} for ${populated.cohort_id?.name || 'cohort'}`,
+    });
+
     res.json({ payout: populated });
   } catch (err) {
     res.status(500).json({ message: 'Failed to record payout', error: err.message });
@@ -1063,6 +1120,14 @@ const generateCertificate = async (req, res) => {
     const populated = await Certificate.findById(certificate._id)
       .populate('student_id', 'name email')
       .populate({ path: 'cohort_id', select: 'name course_id', populate: { path: 'course_id', select: 'title' } });
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'certificate.issued',
+      target_type: 'Certificate',
+      target_id: certificate._id,
+      details: `Issued certificate to ${populated.student_id?.name || 'student'} for ${populated.cohort_id?.course_id?.title || populated.cohort_id?.name || 'cohort'}`,
+    });
 
     res.status(201).json({ certificate: populated });
   } catch (err) {

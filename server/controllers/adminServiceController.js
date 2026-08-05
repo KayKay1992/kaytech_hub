@@ -4,6 +4,7 @@ const ServicePayment = require('../models/ServicePayment');
 const CorporateInvoice = require('../models/CorporateInvoice');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
 const { sendPaymentConfirmedEmail } = require('../utils/email');
+const { logAction } = require('../utils/auditLog');
 
 const { SERVICE_CATEGORIES } = Service;
 const { PAYMENT_METHODS } = ServicePayment;
@@ -260,6 +261,14 @@ const createPaymentForRequest = async (req, res) => {
       itemLabel: request.service_id?.title || 'service request',
       paymentMethod: payment.payment_method,
       date: payment.date,
+    });
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'service_payment.marked_paid',
+      target_type: 'ServiceRequest',
+      target_id: request._id,
+      details: `Recorded ₦${Number(payment.amount).toLocaleString()} payment from ${request.name} for "${request.service_id?.title || 'service request'}"`,
     });
 
     res.status(201).json({ payment });

@@ -3,6 +3,7 @@ const WorkspaceSubscription = require('../models/WorkspaceSubscription');
 const WorkspacePayment = require('../models/WorkspacePayment');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
 const { sendPaymentConfirmedEmail } = require('../utils/email');
+const { logAction } = require('../utils/auditLog');
 
 const { DURATIONS } = WorkspacePlan;
 const { PAYMENT_METHODS } = WorkspacePayment;
@@ -264,6 +265,15 @@ const createPaymentForSubscription = async (req, res) => {
     }
 
     await subscription.save();
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'workspace_payment.marked_paid',
+      target_type: 'WorkspaceSubscription',
+      target_id: subscription._id,
+      details: `Recorded ₦${Number(payment.amount).toLocaleString()} payment from ${subscription.full_name} for "${subscription.plan_id?.name || 'workspace plan'}"`,
+    });
+
     res.status(201).json({ payment, subscription });
   } catch (err) {
     res.status(500).json({ message: 'Failed to record payment', error: err.message });

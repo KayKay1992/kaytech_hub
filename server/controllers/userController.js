@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { logAction } = require('../utils/auditLog');
 
 const VALID_ROLES = ['student', 'instructor', 'admin', 'member'];
 
@@ -41,8 +42,17 @@ const updateUserRole = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const previousRole = user.role;
     user.role = role;
     await user.save();
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'role.changed',
+      target_type: 'User',
+      target_id: user._id,
+      details: `Changed ${user.name}'s role from ${previousRole} to ${role}`,
+    });
 
     res.json({ user });
   } catch (err) {
@@ -61,6 +71,14 @@ const deleteUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'user.deleted',
+      target_type: 'User',
+      target_id: user._id,
+      details: `Deleted ${user.name} (${user.email}), role: ${user.role}`,
+    });
 
     // Foundation only — no Enrollment/Attendance/Cohort records exist yet.
     // Once Academy is built, deleting a student/instructor here will need
@@ -88,6 +106,14 @@ const updateForumBan = async (req, res) => {
 
     user[forum === 'student' ? 'forum_ban_student' : 'forum_ban_alumni'] = Boolean(banned);
     await user.save();
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'forum_ban.applied',
+      target_type: 'User',
+      target_id: user._id,
+      details: `${banned ? 'Banned' : 'Unbanned'} ${user.name} from the ${forum} forum`,
+    });
 
     res.json({ user });
   } catch (err) {

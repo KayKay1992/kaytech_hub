@@ -1,4 +1,5 @@
 const SuccessStory = require('../models/SuccessStory');
+const { logAction } = require('../utils/auditLog');
 
 const STATUSES = ['pending', 'approved', 'rejected'];
 
@@ -27,6 +28,7 @@ const updateStory = async (req, res) => {
     if (!story) {
       return res.status(404).json({ message: 'Success story not found' });
     }
+    const statusChanged = status !== undefined && status !== story.status;
 
     if (status !== undefined) story.status = status;
     if (featured !== undefined) story.featured = featured;
@@ -38,6 +40,17 @@ const updateStory = async (req, res) => {
     }
 
     await story.save();
+
+    if (statusChanged && (status === 'approved' || status === 'rejected')) {
+      await logAction({
+        actor_id: req.user._id,
+        action_type: status === 'approved' ? 'success_story.approved' : 'success_story.rejected',
+        target_type: 'SuccessStory',
+        target_id: story._id,
+        details: `${status === 'approved' ? 'Approved' : 'Rejected'} success story "${story.headline}"`,
+      });
+    }
+
     res.json({ story });
   } catch (err) {
     res.status(500).json({ message: 'Failed to update success story', error: err.message });

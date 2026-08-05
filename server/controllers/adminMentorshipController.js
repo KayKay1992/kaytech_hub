@@ -3,6 +3,7 @@ const MentorshipRegistration = require('../models/MentorshipRegistration');
 const MentorshipPayment = require('../models/MentorshipPayment');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
 const { sendPaymentConfirmedEmail } = require('../utils/email');
+const { logAction } = require('../utils/auditLog');
 
 const { PAYMENT_METHODS } = MentorshipPayment;
 const PROGRAM_STATUSES = ['open', 'closed'];
@@ -202,6 +203,14 @@ const createPaymentForRegistration = async (req, res) => {
     const price = registration.program_id?.price || 0;
     registration.payment_status = total >= price ? 'paid' : 'pending';
     await registration.save();
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'mentorship_payment.marked_paid',
+      target_type: 'MentorshipRegistration',
+      target_id: registration._id,
+      details: `Recorded ₦${Number(payment.amount).toLocaleString()} payment from ${registration.full_name} for "${registration.program_id?.title || 'mentorship program'}"`,
+    });
 
     res.status(201).json({ payment, registration });
   } catch (err) {

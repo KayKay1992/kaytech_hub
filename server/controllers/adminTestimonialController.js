@@ -1,4 +1,5 @@
 const Testimonial = require('../models/Testimonial');
+const { logAction } = require('../utils/auditLog');
 
 const STATUSES = ['pending', 'approved', 'rejected'];
 
@@ -26,6 +27,7 @@ const updateTestimonial = async (req, res) => {
     if (!testimonial) {
       return res.status(404).json({ message: 'Testimonial not found' });
     }
+    const statusChanged = status !== undefined && status !== testimonial.status;
 
     if (status !== undefined) testimonial.status = status;
     if (featured !== undefined) testimonial.featured = featured;
@@ -37,6 +39,17 @@ const updateTestimonial = async (req, res) => {
     }
 
     await testimonial.save();
+
+    if (statusChanged && (status === 'approved' || status === 'rejected')) {
+      await logAction({
+        actor_id: req.user._id,
+        action_type: status === 'approved' ? 'testimonial.approved' : 'testimonial.rejected',
+        target_type: 'Testimonial',
+        target_id: testimonial._id,
+        details: `${status === 'approved' ? 'Approved' : 'Rejected'} testimonial from ${testimonial.name}`,
+      });
+    }
+
     res.json({ testimonial });
   } catch (err) {
     res.status(500).json({ message: 'Failed to update testimonial', error: err.message });

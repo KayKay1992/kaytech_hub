@@ -3,6 +3,7 @@ const ScholarshipApplication = require('../models/ScholarshipApplication');
 const Course = require('../models/Course');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
 const { sendScholarshipApprovedEmail, sendScholarshipRejectedEmail } = require('../utils/email');
+const { logAction } = require('../utils/auditLog');
 
 const PROGRAM_STATUSES = ['open', 'closed'];
 const APPLICATION_STATUSES = ['pending', 'approved', 'rejected'];
@@ -168,6 +169,16 @@ const updateApplication = async (req, res) => {
       });
     } else if (statusChangedTo === 'rejected') {
       await sendScholarshipRejectedEmail(application.email, { applicantName: application.applicant_name });
+    }
+
+    if (statusChangedTo === 'approved' || statusChangedTo === 'rejected') {
+      await logAction({
+        actor_id: req.user._id,
+        action_type: statusChangedTo === 'approved' ? 'scholarship_application.approved' : 'scholarship_application.rejected',
+        target_type: 'ScholarshipApplication',
+        target_id: application._id,
+        details: `${statusChangedTo === 'approved' ? 'Approved' : 'Rejected'} scholarship application from ${application.applicant_name}`,
+      });
     }
 
     res.json({ application });

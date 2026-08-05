@@ -1901,6 +1901,17 @@ a:hover { color: var(--color-amber); }
 .admin-page-header__actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .admin-stat-grid { margin-bottom: 28px; }
 
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 16px;
+  color: var(--color-text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+}
+
 .admin-toolbar { align-items: center; }
 .admin-toolbar__search { position: relative; flex: 1; min-width: 220px; }
 .admin-toolbar__search input {

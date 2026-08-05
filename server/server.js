@@ -48,6 +48,7 @@ const assistantRoutes = require('./routes/assistantRoutes');
 const corporateTrainingRoutes = require('./routes/corporateTrainingRoutes');
 const adminCorporateRoutes = require('./routes/adminCorporateRoutes');
 const graduateJobRoutes = require('./routes/graduateJobRoutes');
+const adminAuditLogRoutes = require('./routes/adminAuditLogRoutes');
 const adminGraduateJobRoutes = require('./routes/adminGraduateJobRoutes');
 
 const app = express();
@@ -105,6 +106,7 @@ app.use('/api/corporate-training', corporateTrainingRoutes);
 app.use('/api/admin', adminCorporateRoutes);
 app.use('/api/graduate-jobs', graduateJobRoutes);
 app.use('/api/admin', adminGraduateJobRoutes);
+app.use('/api/admin', adminAuditLogRoutes);
 
 // 404 handler
 app.use('/api', (req, res) => {

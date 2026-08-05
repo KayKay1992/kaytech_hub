@@ -18,6 +18,7 @@ import {
   MessageSquareQuote,
   MessagesSquare,
   Newspaper,
+  ScrollText,
   ShieldAlert,
   Star,
   Users2,
@@ -74,6 +75,7 @@ const ADMIN_NAV_GROUPS = [
       { to: '/admin/careers', label: 'Job Listings', icon: Briefcase },
       { to: '/admin/graduate-jobs', label: 'Graduate Job Board', icon: Briefcase },
       { to: '/admin/testimonials', label: 'Testimonials', icon: MessageSquareQuote },
+      { to: '/admin/audit-log', label: 'Audit Log', icon: ScrollText },
     ],
   },
   {

@@ -4,6 +4,7 @@ const CorporateClient = require('../models/CorporateClient');
 const CorporateInvoice = require('../models/CorporateInvoice');
 const { uploadFile } = require('../utils/upload');
 const { buildProposalPdf, buildInvoicePdf } = require('../utils/corporatePdf');
+const { logAction } = require('../utils/auditLog');
 
 const { PIPELINE_STAGES } = CorporateTrainingRequest;
 const { PROPOSAL_STATUSES } = CorporateProposal;
@@ -116,6 +117,14 @@ const createProposal = async (req, res) => {
       request.stage = 'proposal_sent';
       await request.save();
     }
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'corporate_proposal.created',
+      target_type: 'CorporateProposal',
+      target_id: proposal._id,
+      details: `Created proposal "${title}" (₦${Number(price).toLocaleString()}) for ${request.company_name}`,
+    });
 
     res.status(201).json({ proposal });
   } catch (err) {
@@ -307,6 +316,14 @@ const createInvoice = async (req, res) => {
       pdf_url: url,
     });
 
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'corporate_invoice.created',
+      target_type: 'CorporateInvoice',
+      target_id: invoice._id,
+      details: `Created invoice ${invoice_number} (₦${Number(amount).toLocaleString()}) for ${client.company_name}`,
+    });
+
     res.status(201).json({ invoice });
   } catch (err) {
     res.status(500).json({ message: 'Failed to create invoice', error: err.message });
@@ -333,6 +350,15 @@ const markInvoicePaid = async (req, res) => {
     invoice.payment_method = payment_method;
     invoice.paid_at = paid_at || new Date();
     await invoice.save();
+
+    const client = await CorporateClient.findById(invoice.client_id);
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'corporate_invoice.marked_paid',
+      target_type: 'CorporateInvoice',
+      target_id: invoice._id,
+      details: `Marked invoice ${invoice.invoice_number} (₦${invoice.amount.toLocaleString()}) as paid for ${client?.company_name || 'client'}`,
+    });
 
     res.json({ invoice });
   } catch (err) {

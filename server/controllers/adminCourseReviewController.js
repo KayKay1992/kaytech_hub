@@ -1,5 +1,6 @@
 const CourseReview = require('../models/CourseReview');
 const { recalcCourseRating } = require('../utils/courseRating');
+const { logAction } = require('../utils/auditLog');
 
 const STATUSES = ['pending', 'approved', 'rejected'];
 
@@ -35,6 +36,16 @@ const updateReview = async (req, res) => {
     }
     await review.save();
     await recalcCourseRating(review.course_id);
+
+    if (status === 'approved' || status === 'rejected') {
+      await logAction({
+        actor_id: req.user._id,
+        action_type: status === 'approved' ? 'course_review.approved' : 'course_review.rejected',
+        target_type: 'CourseReview',
+        target_id: review._id,
+        details: `${status === 'approved' ? 'Approved' : 'Rejected'} a course review`,
+      });
+    }
 
     res.json({ review });
   } catch (err) {

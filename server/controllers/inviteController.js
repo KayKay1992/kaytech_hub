@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const InviteCode = require('../models/InviteCode');
+const { logAction } = require('../utils/auditLog');
 
 const INVITABLE_ROLES = ['student', 'instructor'];
 
@@ -25,6 +26,14 @@ const createInvite = async (req, res) => {
       code,
       role,
       created_by: req.user._id,
+    });
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'invite_code.generated',
+      target_type: 'InviteCode',
+      target_id: invite._id,
+      details: `Generated a ${role} invite code (${invite.code})`,
     });
 
     res.status(201).json({ invite });
@@ -61,6 +70,15 @@ const deleteInvite = async (req, res) => {
     if (!invite) {
       return res.status(404).json({ message: 'Invite code not found' });
     }
+
+    await logAction({
+      actor_id: req.user._id,
+      action_type: 'invite_code.deleted',
+      target_type: 'InviteCode',
+      target_id: invite._id,
+      details: `Deleted ${invite.role} invite code (${invite.code})`,
+    });
+
     res.json({ message: 'Invite code deleted', id: invite._id });
   } catch (err) {
     res.status(500).json({ message: 'Failed to delete invite code', error: err.message });
