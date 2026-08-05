@@ -10,6 +10,7 @@ import About from './pages/About';
 import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
 import CourseRegister from './pages/CourseRegister';
+import CourseWaitlistJoin from './pages/CourseWaitlistJoin';
 import Services from './pages/Services';
 import ServiceDetail from './pages/ServiceDetail';
 import ServiceRequest from './pages/ServiceRequest';
@@ -86,6 +87,7 @@ import AdminCourses from './pages/admin/academy/Courses';
 import AdminCourseContent from './pages/admin/academy/CourseContent';
 import AdminCohorts from './pages/admin/academy/Cohorts';
 import AdminCohortForm from './pages/admin/academy/CohortForm';
+import AdminWaitlist from './pages/admin/academy/Waitlist';
 import AdminApprovals from './pages/admin/academy/Approvals';
 import AdminRegistrations from './pages/admin/academy/Registrations';
 import AdminCohortEnrollments from './pages/admin/academy/CohortEnrollments';
@@ -112,6 +114,7 @@ function App() {
         <Route path="/courses" element={<Courses />} />
         <Route path="/courses/:id" element={<CourseDetail />} />
         <Route path="/courses/:id/register" element={<CourseRegister />} />
+        <Route path="/courses/:id/waitlist" element={<CourseWaitlistJoin />} />
         <Route path="/services" element={<Services />} />
         <Route path="/services/:id" element={<ServiceDetail />} />
         <Route path="/services/:id/request" element={<ServiceRequest />} />
@@ -214,6 +217,7 @@ function App() {
           <Route path="academy/cohorts" element={<AdminCohorts />} />
           <Route path="academy/cohorts/new" element={<AdminCohortForm />} />
           <Route path="academy/cohorts/:id/edit" element={<AdminCohortForm />} />
+          <Route path="academy/waitlist" element={<AdminWaitlist />} />
           <Route path="academy/cohorts/:id/enrollments" element={<AdminCohortEnrollments />} />
           <Route path="academy/cohorts/:id/attendance" element={<AdminCohortAttendance />} />
           <Route path="academy/approvals" element={<AdminApprovals />} />

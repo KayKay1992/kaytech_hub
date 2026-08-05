@@ -9,9 +9,10 @@ const Attendance = require('../models/Attendance');
 const Payment = require('../models/Payment');
 const InstructorPayout = require('../models/InstructorPayout');
 const Certificate = require('../models/Certificate');
+const CohortWaitlistEntry = require('../models/CohortWaitlistEntry');
 const { uploadImage, uploadFile, deleteFile, keyFromUrl } = require('../utils/upload');
 const { buildCertificatePdf } = require('../utils/certificatePdf');
-const { sendPaymentConfirmedEmail, sendEnrollmentWelcomeEmail } = require('../utils/email');
+const { sendPaymentConfirmedEmail, sendEnrollmentWelcomeEmail, sendCohortWaitlistOpenEmail } = require('../utils/email');
 
 const COURSE_STATUSES = ['draft', 'published', 'archived'];
 const COHORT_STATUSES = ['upcoming', 'active', 'completed'];
@@ -264,7 +265,19 @@ const listCohorts = async (req, res) => {
       .populate('instructor_id', 'name email')
       .sort({ start_date: -1 });
 
-    res.json({ cohorts });
+    // Active (non-dropped) enrollment count per cohort, so the table can
+    // show "X / Y students" and flag when a cohort is at capacity.
+    const counts = await Enrollment.aggregate([
+      { $match: { cohort_id: { $in: cohorts.map((c) => c._id) }, status: { $ne: 'dropped' } } },
+      { $group: { _id: '$cohort_id', count: { $sum: 1 } } },
+    ]);
+    const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+    const withCounts = cohorts.map((cohort) => ({
+      ...cohort.toObject(),
+      enrolled_count: countMap.get(String(cohort._id)) || 0,
+    }));
+
+    res.json({ cohorts: withCounts });
   } catch (err) {
     res.status(500).json({ message: 'Failed to load cohorts', error: err.message });
   }
@@ -288,7 +301,7 @@ const getCohort = async (req, res) => {
 // POST /api/admin/academy/cohorts
 const createCohort = async (req, res) => {
   try {
-    const { course_id, instructor_id, name, start_date, end_date, instructor_payout_percent, status } = req.body;
+    const { course_id, instructor_id, name, start_date, end_date, instructor_payout_percent, status, max_students } = req.body;
     if (!course_id || !instructor_id || !name || !start_date || !end_date) {
       return res.status(400).json({ message: 'course_id, instructor_id, name, start_date, and end_date are required' });
     }
@@ -320,6 +333,7 @@ const createCohort = async (req, res) => {
       end_date,
       ...(instructor_payout_percent !== undefined && instructor_payout_percent !== '' ? { instructor_payout_percent: Number(instructor_payout_percent) } : {}),
       status: status || 'upcoming',
+      max_students: max_students || null,
     });
 
     res.status(201).json({ cohort });
@@ -331,7 +345,7 @@ const createCohort = async (req, res) => {
 // PATCH /api/admin/academy/cohorts/:id
 const updateCohort = async (req, res) => {
   try {
-    const { instructor_id, name, start_date, end_date, instructor_payout_percent, status } = req.body;
+    const { instructor_id, name, start_date, end_date, instructor_payout_percent, status, max_students } = req.body;
     if (status && !COHORT_STATUSES.includes(status)) {
       return res.status(400).json({ message: `Status must be one of: ${COHORT_STATUSES.join(', ')}` });
     }
@@ -356,6 +370,7 @@ const updateCohort = async (req, res) => {
     if (end_date !== undefined) cohort.end_date = end_date;
     if (instructor_payout_percent !== undefined && instructor_payout_percent !== '') cohort.instructor_payout_percent = Number(instructor_payout_percent);
     if (status !== undefined) cohort.status = status;
+    if (max_students !== undefined) cohort.max_students = max_students || null;
 
     if (new Date(cohort.start_date) >= new Date(cohort.end_date)) {
       return res.status(400).json({ message: 'Start date must be before end date' });
@@ -1062,6 +1077,119 @@ const listCertificates = async (req, res) => {
   }
 };
 
+// ---------- Cohort waitlist ----------
+
+// GET /api/admin/academy/waitlist?course_id=...&cohort_id=...
+const listWaitlist = async (req, res) => {
+  try {
+    const { course_id, cohort_id } = req.query;
+    const filter = {};
+    if (course_id) filter.course_id = course_id;
+    if (cohort_id) filter.cohort_id = cohort_id;
+
+    const entries = await CohortWaitlistEntry.find(filter)
+      .populate('course_id', 'title')
+      .populate('cohort_id', 'name')
+      .sort({ joined_at: -1 });
+
+    res.json({ entries });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to load waitlist', error: err.message });
+  }
+};
+
+// PATCH /api/admin/academy/waitlist/:id/convert — { cohort_id }. Same rule
+// as convertRegistration: only works once the person already has a student
+// account (created via invite code, matched by email) — connects the
+// waitlist entry to a real Enrollment in the newly-opened cohort.
+const convertWaitlistEntry = async (req, res) => {
+  try {
+    const { cohort_id } = req.body;
+    if (!cohort_id) {
+      return res.status(400).json({ message: 'cohort_id is required' });
+    }
+
+    const entry = await CohortWaitlistEntry.findById(req.params.id);
+    if (!entry) {
+      return res.status(404).json({ message: 'Waitlist entry not found' });
+    }
+    if (entry.status === 'converted') {
+      return res.status(400).json({ message: 'This waitlist entry has already been converted' });
+    }
+
+    const cohort = await Cohort.findById(cohort_id).populate('course_id', 'title');
+    if (!cohort) {
+      return res.status(404).json({ message: 'Cohort not found' });
+    }
+
+    const student = await User.findOne({ email: entry.email, role: 'student' });
+    if (!student) {
+      return res.status(400).json({ message: 'No student account found for this email yet — generate an invite code and confirm they have signed up first' });
+    }
+
+    const existing = await Enrollment.findOne({ student_id: student._id, cohort_id });
+    if (existing) {
+      return res.status(400).json({ message: 'This student is already enrolled in this cohort' });
+    }
+
+    const enrollment = await Enrollment.create({
+      student_id: student._id,
+      cohort_id,
+    });
+    await initializeEnrollmentFee(enrollment);
+
+    entry.status = 'converted';
+    await entry.save();
+
+    await sendEnrollmentWelcomeEmail(student.email, {
+      name: student.name,
+      courseTitle: cohort.course_id?.title || 'your course',
+      cohortName: cohort.name,
+    });
+
+    res.status(201).json({ enrollment, entry });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to convert waitlist entry', error: err.message });
+  }
+};
+
+// POST /api/admin/academy/courses/:courseId/waitlist/notify — { cohort_id }.
+// Manual trigger (not automatic) — emails everyone still 'waiting' on this
+// course's waitlist that the given cohort has opened, then flips them to
+// 'notified' so a repeat click doesn't double-email the same people.
+const notifyCourseWaitlist = async (req, res) => {
+  try {
+    const { cohort_id } = req.body;
+    if (!cohort_id) {
+      return res.status(400).json({ message: 'cohort_id is required' });
+    }
+
+    const cohort = await Cohort.findOne({ _id: cohort_id, course_id: req.params.courseId }).populate('course_id', 'title');
+    if (!cohort) {
+      return res.status(404).json({ message: 'Cohort not found for this course' });
+    }
+
+    const waitingEntries = await CohortWaitlistEntry.find({ course_id: req.params.courseId, status: 'waiting' });
+
+    const registerUrl = `${process.env.CLIENT_URL || 'https://kaytechhub.com'}/courses/${req.params.courseId}/register`;
+    await Promise.all(waitingEntries.map((entry) => sendCohortWaitlistOpenEmail(entry.email, {
+      name: entry.name,
+      courseTitle: cohort.course_id?.title || 'your course',
+      cohortName: cohort.name,
+      registerUrl,
+    })));
+
+    await CohortWaitlistEntry.updateMany(
+      { _id: { $in: waitingEntries.map((e) => e._id) } },
+      { status: 'notified' }
+    );
+
+    res.json({ notified: waitingEntries.length });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to notify waitlist', error: err.message });
+  }
+};
+
 module.exports = {
   listCourses,
   getCourse,
@@ -1093,4 +1221,7 @@ module.exports = {
   payInstructor,
   generateCertificate,
   listCertificates,
+  listWaitlist,
+  convertWaitlistEntry,
+  notifyCourseWaitlist,
 };

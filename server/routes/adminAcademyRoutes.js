@@ -30,6 +30,9 @@ const {
   payInstructor,
   generateCertificate,
   listCertificates,
+  listWaitlist,
+  convertWaitlistEntry,
+  notifyCourseWaitlist,
 } = require('../controllers/adminAcademyController');
 const { protect, authorize } = require('../middleware/auth');
 const { imageUploadMiddleware } = require('../utils/upload');
@@ -77,5 +80,9 @@ router.post('/academy/payouts/:id/pay', payInstructor);
 
 router.get('/academy/certificates', listCertificates);
 router.post('/academy/certificates', generateCertificate);
+
+router.get('/academy/waitlist', listWaitlist);
+router.patch('/academy/waitlist/:id/convert', convertWaitlistEntry);
+router.post('/academy/courses/:courseId/waitlist/notify', notifyCourseWaitlist);
 
 module.exports = router;

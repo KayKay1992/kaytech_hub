@@ -39,6 +39,13 @@ const cohortSchema = new mongoose.Schema({
     min: 0,
     max: 100,
   },
+  // null means no capacity limit — same pattern as Event.max_participants.
+  // Once active Enrollment count reaches this, the public course page shows
+  // "Cohort Full — Join Waitlist" instead of the normal registration CTA.
+  max_students: {
+    type: Number,
+    default: null,
+  },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 });

@@ -51,6 +51,7 @@ export default function CourseDetail() {
     : curriculumLines.map((title, i) => ({ _id: `line-${i}`, title, lessons: [] }));
 
   const nextCohort = cohorts[0];
+  const nextCohortFull = Boolean(nextCohort?.max_students) && nextCohort.enrolled_count >= nextCohort.max_students;
 
   const metaDescription = course.description.length > 160
     ? `${course.description.slice(0, 157)}...`
@@ -199,9 +200,18 @@ export default function CourseDetail() {
               </div>
             )}
 
-            <Link to={`/courses/${course._id}/register`} className="btn btn--primary btn--full course-price-card__cta">
-              Register Now
-            </Link>
+            {nextCohortFull ? (
+              <Link
+                to={`/courses/${course._id}/waitlist?cohort=${nextCohort._id}`}
+                className="btn btn--primary btn--full course-price-card__cta"
+              >
+                Cohort Full — Join Waitlist
+              </Link>
+            ) : (
+              <Link to={`/courses/${course._id}/register`} className="btn btn--primary btn--full course-price-card__cta">
+                Register Now
+              </Link>
+            )}
           </Reveal>
         </div>
       </div>

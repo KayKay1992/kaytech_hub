@@ -68,27 +68,36 @@ export default function AdminCohorts() {
                 <th>Course</th>
                 <th>Instructor</th>
                 <th>Dates</th>
+                <th>Students</th>
                 <th>Payout %</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {cohorts.map((cohort) => (
-                <tr key={cohort._id}>
-                  <td>{cohort.name}</td>
-                  <td>{cohort.course_id?.title || '—'}</td>
-                  <td>{cohort.instructor_id?.name || '—'}</td>
-                  <td>{new Date(cohort.start_date).toLocaleDateString()} – {new Date(cohort.end_date).toLocaleDateString()}</td>
-                  <td>{cohort.instructor_payout_percent}%</td>
-                  <td><span className={`invite-status ${STATUS_CLASSES[cohort.status] || ''}`}>{cohort.status}</span></td>
-                  <td className="admin-table__actions">
-                    <Link to={`/admin/academy/cohorts/${cohort._id}/edit`} className="btn btn--ghost">Edit</Link>
-                    <Link to={`/admin/academy/cohorts/${cohort._id}/enrollments`} className="btn btn--ghost">Enrollments</Link>
-                    <Link to={`/admin/academy/cohorts/${cohort._id}/attendance`} className="btn btn--ghost">Attendance</Link>
-                  </td>
-                </tr>
-              ))}
+              {cohorts.map((cohort) => {
+                const isFull = Boolean(cohort.max_students) && cohort.enrolled_count >= cohort.max_students;
+                return (
+                  <tr key={cohort._id}>
+                    <td>{cohort.name}</td>
+                    <td>{cohort.course_id?.title || '—'}</td>
+                    <td>{cohort.instructor_id?.name || '—'}</td>
+                    <td>{new Date(cohort.start_date).toLocaleDateString()} – {new Date(cohort.end_date).toLocaleDateString()}</td>
+                    <td>
+                      {cohort.enrolled_count}{cohort.max_students ? ` / ${cohort.max_students}` : ''}
+                      {isFull && <span className="invite-status invite-status--expired" style={{ marginLeft: 8 }}>full</span>}
+                    </td>
+                    <td>{cohort.instructor_payout_percent}%</td>
+                    <td><span className={`invite-status ${STATUS_CLASSES[cohort.status] || ''}`}>{cohort.status}</span></td>
+                    <td className="admin-table__actions">
+                      <Link to={`/admin/academy/cohorts/${cohort._id}/edit`} className="btn btn--ghost">Edit</Link>
+                      <Link to={`/admin/academy/cohorts/${cohort._id}/enrollments`} className="btn btn--ghost">Enrollments</Link>
+                      <Link to={`/admin/academy/cohorts/${cohort._id}/attendance`} className="btn btn--ghost">Attendance</Link>
+                      <Link to={`/admin/academy/waitlist?course_id=${cohort.course_id?._id}`} className="btn btn--ghost">Waitlist</Link>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

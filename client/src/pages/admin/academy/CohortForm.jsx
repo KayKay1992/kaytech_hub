@@ -4,7 +4,7 @@ import api from '../../../api/axios';
 
 const EMPTY_FORM = {
   course_id: '', instructor_id: '', name: '',
-  start_date: '', end_date: '', instructor_payout_percent: '35', status: 'upcoming',
+  start_date: '', end_date: '', instructor_payout_percent: '35', status: 'upcoming', max_students: '',
 };
 
 const toDateInputValue = (date) => (date ? new Date(date).toISOString().slice(0, 10) : '');
@@ -41,6 +41,7 @@ export default function CohortForm() {
             end_date: toDateInputValue(cohort.end_date),
             instructor_payout_percent: cohort.instructor_payout_percent,
             status: cohort.status,
+            max_students: cohort.max_students ?? '',
           });
         }
       })
@@ -130,6 +131,12 @@ export default function CohortForm() {
             <option value="active">Active</option>
             <option value="completed">Completed</option>
           </select>
+        </label>
+
+        <label>
+          Max students (optional)
+          <input type="number" name="max_students" min="1" value={form.max_students} onChange={handleChange} placeholder="Leave blank for no limit" />
+          <span className="form-hint">Once enrollments reach this, the public course page shows "Cohort Full — Join Waitlist" instead of the normal registration CTA.</span>
         </label>
 
         <button type="submit" className="btn btn--primary btn--full" disabled={saving}>

@@ -152,6 +152,24 @@ const sendEventRegistrationEmail = async (to, { fullName, eventTitle, eventDate,
   });
 };
 
+// COHORT WAITLIST — NEW COHORT OPEN ------------------------------------------
+
+const sendCohortWaitlistOpenEmail = async (to, { name, courseTitle, cohortName, registerUrl }) => {
+  await safeSend({
+    from: FROM_ADDRESS,
+    to,
+    subject: `A new cohort just opened for ${courseTitle}`,
+    html: wrapEmail(`
+      <h2 style="color: #10142B;">Good news, ${name}!</h2>
+      <p>You joined the waitlist for <strong>${courseTitle}</strong> when the last cohort filled up — a new cohort${cohortName ? `, <strong>${cohortName}</strong>,` : ''} is now open.</p>
+      <p style="margin: 24px 0;">
+        <a href="${registerUrl}" style="background: #FFB020; color: #10142B; padding: 12px 24px; border-radius: 999px; text-decoration: none; font-weight: 600;">Register now</a>
+      </p>
+      <p>Spots are limited, so don't wait too long!</p>
+    `),
+  });
+};
+
 module.exports = {
   sendPasswordResetEmail,
   sendScholarshipApprovedEmail,
@@ -159,4 +177,5 @@ module.exports = {
   sendPaymentConfirmedEmail,
   sendEnrollmentWelcomeEmail,
   sendEventRegistrationEmail,
+  sendCohortWaitlistOpenEmail,
 };

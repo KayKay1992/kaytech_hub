@@ -4,8 +4,25 @@ const Module = require('../models/Module');
 const Lesson = require('../models/Lesson');
 const CourseRegistration = require('../models/CourseRegistration');
 const CourseReview = require('../models/CourseReview');
+const Enrollment = require('../models/Enrollment');
+const CohortWaitlistEntry = require('../models/CohortWaitlistEntry');
 
 const EXPERIENCE_LEVELS = ['beginner', 'intermediate', 'advanced'];
+
+// Merges each cohort with how many active (non-dropped) Enrollments it has,
+// in one grouped query rather than N+1 counts — same pattern as
+// eventController's withRegistrationCounts.
+const withEnrolledCounts = async (cohorts) => {
+  const counts = await Enrollment.aggregate([
+    { $match: { cohort_id: { $in: cohorts.map((c) => c._id) }, status: { $ne: 'dropped' } } },
+    { $group: { _id: '$cohort_id', count: { $sum: 1 } } },
+  ]);
+  const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+  return cohorts.map((cohort) => ({
+    ...cohort.toObject(),
+    enrolled_count: countMap.get(String(cohort._id)) || 0,
+  }));
+};
 
 // GET /api/courses — public, published only
 const listPublishedCourses = async (req, res) => {
@@ -31,9 +48,10 @@ const getCourse = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    const cohorts = await Cohort.find({ course_id: course._id, status: { $in: ['upcoming', 'active'] } })
+    const rawCohorts = await Cohort.find({ course_id: course._id, status: { $in: ['upcoming', 'active'] } })
       .populate('instructor_id', 'name')
       .sort({ start_date: 1 });
+    const cohorts = await withEnrolledCounts(rawCohorts);
 
     // Approved-only curriculum outline (titles only — full lesson content
     // stays behind the future Enrollment-gated student view).
@@ -102,4 +120,44 @@ const registerForCourse = async (req, res) => {
   }
 };
 
-module.exports = { listPublishedCourses, getCourse, registerForCourse };
+// POST /api/courses/:id/waitlist — public, no login. Only meaningful when
+// the given cohort is actually at max_students capacity; re-validated here
+// since the disabled/hidden client-side state can be bypassed by hitting
+// this endpoint directly.
+const joinWaitlist = async (req, res) => {
+  try {
+    const course = await Course.findOne({ _id: req.params.id, status: 'published' });
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    const { cohort_id, name, email, phone } = req.body;
+    if (!cohort_id || !name || !email || !phone) {
+      return res.status(400).json({ message: 'cohort_id, name, email, and phone are required' });
+    }
+
+    const cohort = await Cohort.findOne({ _id: cohort_id, course_id: course._id });
+    if (!cohort) {
+      return res.status(400).json({ message: 'cohort_id must reference a cohort of this course' });
+    }
+
+    const enrolled_count = await Enrollment.countDocuments({ cohort_id: cohort._id, status: { $ne: 'dropped' } });
+    if (!cohort.max_students || enrolled_count < cohort.max_students) {
+      return res.status(400).json({ message: 'This cohort still has open spots — please register directly instead.' });
+    }
+
+    const entry = await CohortWaitlistEntry.create({
+      course_id: course._id,
+      cohort_id: cohort._id,
+      name,
+      email,
+      phone,
+    });
+
+    res.status(201).json({ entry });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to join the waitlist', error: err.message });
+  }
+};
+
+module.exports = { listPublishedCourses, getCourse, registerForCourse, joinWaitlist };
