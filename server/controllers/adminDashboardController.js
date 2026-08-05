@@ -8,6 +8,7 @@ const CourseRegistration = require('../models/CourseRegistration');
 const Payment = require('../models/Payment');
 const ScholarshipProgram = require('../models/ScholarshipProgram');
 const ServicePayment = require('../models/ServicePayment');
+const CorporateInvoice = require('../models/CorporateInvoice');
 const MentorshipPayment = require('../models/MentorshipPayment');
 const MentorshipRegistration = require('../models/MentorshipRegistration');
 const WorkspacePayment = require('../models/WorkspacePayment');
@@ -19,6 +20,16 @@ const WorkspaceSubscription = require('../models/WorkspaceSubscription');
 // collected money.
 const sumAmount = async (Model) => {
   const [{ total } = { total: 0 }] = await Model.aggregate([
+    { $group: { _id: null, total: { $sum: '$amount' } } },
+  ]);
+  return total;
+};
+
+// Corporate training invoices are folded into Services revenue (not a 5th
+// bucket) — only paid invoices count as collected money.
+const sumPaidCorporateInvoices = async () => {
+  const [{ total } = { total: 0 }] = await CorporateInvoice.aggregate([
+    { $match: { status: 'paid' } },
     { $group: { _id: null, total: { $sum: '$amount' } } },
   ]);
   return total;
@@ -66,11 +77,13 @@ const getStats = async (req, res) => {
       { $group: { _id: null, totalRevenue: { $sum: '$amount' } } },
     ]);
 
-    const [servicesRevenue, mentorshipRevenue, spaceRevenue] = await Promise.all([
+    const [servicePaymentsRevenue, mentorshipRevenue, spaceRevenue, corporateInvoiceRevenue] = await Promise.all([
       sumAmount(ServicePayment),
       sumAmount(MentorshipPayment),
       sumAmount(WorkspacePayment),
+      sumPaidCorporateInvoices(),
     ]);
+    const servicesRevenue = servicePaymentsRevenue + corporateInvoiceRevenue;
 
     const revenueByLine = {
       academy: academyRevenue,

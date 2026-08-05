@@ -1,6 +1,7 @@
 const Service = require('../models/Service');
 const ServiceRequest = require('../models/ServiceRequest');
 const ServicePayment = require('../models/ServicePayment');
+const CorporateInvoice = require('../models/CorporateInvoice');
 const { uploadImage, deleteFile, keyFromUrl } = require('../utils/upload');
 const { sendPaymentConfirmedEmail } = require('../utils/email');
 
@@ -284,13 +285,16 @@ const deleteRequestPayment = async (req, res) => {
   }
 };
 
-// GET /api/admin/services/revenue — sum of every ServicePayment ever recorded
+// GET /api/admin/services/revenue — sum of every ServicePayment ever recorded,
+// plus paid CorporateInvoices (corporate training is a form of service
+// revenue — folded in here rather than tracked as a separate bucket).
 const getServiceRevenue = async (req, res) => {
   try {
-    const [{ total } = { total: 0 }] = await ServicePayment.aggregate([
-      { $group: { _id: null, total: { $sum: '$amount' } } },
+    const [[{ total: servicePaymentsTotal } = { total: 0 }], [{ total: corporateInvoiceTotal } = { total: 0 }]] = await Promise.all([
+      ServicePayment.aggregate([{ $group: { _id: null, total: { $sum: '$amount' } } }]),
+      CorporateInvoice.aggregate([{ $match: { status: 'paid' } }, { $group: { _id: null, total: { $sum: '$amount' } } }]),
     ]);
-    res.json({ total });
+    res.json({ total: (servicePaymentsTotal || 0) + (corporateInvoiceTotal || 0) });
   } catch (err) {
     res.status(500).json({ message: 'Failed to load service revenue', error: err.message });
   }

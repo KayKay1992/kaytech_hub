@@ -13,6 +13,7 @@ import CourseRegister from './pages/CourseRegister';
 import Services from './pages/Services';
 import ServiceDetail from './pages/ServiceDetail';
 import ServiceRequest from './pages/ServiceRequest';
+import CorporateTrainingRequest from './pages/CorporateTrainingRequest';
 import Mentorship from './pages/Mentorship';
 import Space from './pages/Space';
 import SpaceReserve from './pages/SpaceReserve';
@@ -55,6 +56,10 @@ import EventRegistrants from './pages/admin/EventRegistrants';
 import AdminServices from './pages/admin/hub/Services';
 import AdminServiceForm from './pages/admin/hub/ServiceForm';
 import AdminServiceRequests from './pages/admin/hub/ServiceRequests';
+import AdminCorporateTraining from './pages/admin/hub/CorporateTraining';
+import AdminCorporateTrainingDetail from './pages/admin/hub/CorporateTrainingDetail';
+import AdminCorporateClients from './pages/admin/hub/CorporateClients';
+import AdminCorporateClientDetail from './pages/admin/hub/CorporateClientDetail';
 import AdminMentorship from './pages/admin/hub/Mentorship';
 import AdminMentorshipRegistrations from './pages/admin/hub/MentorshipRegistrations';
 import AdminSpacePlans from './pages/admin/space/Plans';
@@ -107,6 +112,7 @@ function App() {
         <Route path="/services" element={<Services />} />
         <Route path="/services/:id" element={<ServiceDetail />} />
         <Route path="/services/:id/request" element={<ServiceRequest />} />
+        <Route path="/corporate-training" element={<CorporateTrainingRequest />} />
         <Route path="/mentorship" element={<Mentorship />} />
         <Route path="/space" element={<Space />} />
         <Route path="/space/:planId/reserve" element={<SpaceReserve />} />
@@ -190,6 +196,10 @@ function App() {
           <Route path="services/new" element={<AdminServiceForm />} />
           <Route path="services/:id/edit" element={<AdminServiceForm />} />
           <Route path="service-requests" element={<AdminServiceRequests />} />
+          <Route path="corporate-training" element={<AdminCorporateTraining />} />
+          <Route path="corporate-training/:id" element={<AdminCorporateTrainingDetail />} />
+          <Route path="corporate-clients" element={<AdminCorporateClients />} />
+          <Route path="corporate-clients/:id" element={<AdminCorporateClientDetail />} />
           <Route path="mentorship" element={<AdminMentorship />} />
           <Route path="mentorship-registrations" element={<AdminMentorshipRegistrations />} />
           <Route path="space/plans" element={<AdminSpacePlans />} />

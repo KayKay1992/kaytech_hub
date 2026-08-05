@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import SEO from '../components/common/SEO';
 import PageHeader from '../components/common/PageHeader';
 import ServiceCard from '../components/services/ServiceCard';
+import Reveal from '../components/common/Reveal';
 
 export default function Services() {
   const [services, setServices] = useState([]);
@@ -42,6 +44,17 @@ export default function Services() {
           </div>
         )}
       </section>
+
+      <Reveal as="section" className="section section--flush-top">
+        <div className="card corporate-training-cta">
+          <div>
+            <span className="badge">For Companies</span>
+            <h3>Need training for your whole team?</h3>
+            <p>Staff training, AI training, or software training tailored to your company — tell us what you need and we'll follow up with a proposal.</p>
+          </div>
+          <Link to="/corporate-training" className="btn btn--primary">Request Corporate Training</Link>
+        </div>
+      </Reveal>
     </>
   );
 }

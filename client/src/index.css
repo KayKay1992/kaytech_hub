@@ -772,6 +772,19 @@ a:hover { color: var(--color-amber); }
 
 .founder { display: flex; gap: 32px; align-items: center; flex-wrap: wrap; }
 
+.corporate-training-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.corporate-training-cta h3 { margin: 8px 0 6px; }
+.corporate-training-cta p { margin: 0; color: var(--color-slate); max-width: 46ch; }
+@media (max-width: 640px) {
+  .corporate-training-cta { flex-direction: column; align-items: flex-start; }
+}
+
 /* Success Story card — quote/story-style content, distinct from the plain
    Course/Service card: a Circuit Teal accent line + faint decorative quote
    mark mark it as testimonial-adjacent rather than a product card. */

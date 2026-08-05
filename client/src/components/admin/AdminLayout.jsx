@@ -9,6 +9,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   CreditCard,
+  FileText,
   GraduationCap,
   KeyRound,
   LayoutDashboard,
@@ -53,6 +54,8 @@ const ADMIN_NAV_GROUPS = [
       { to: '/admin/service-requests', label: 'Service Requests', icon: ClipboardList },
       { to: '/admin/mentorship', label: 'Mentorship', icon: GraduationCap },
       { to: '/admin/mentorship-registrations', label: 'Mentorship Registrations', icon: ClipboardCheck },
+      { to: '/admin/corporate-training', label: 'Corporate Training', icon: Building2 },
+      { to: '/admin/corporate-clients', label: 'Corporate Clients', icon: FileText },
     ],
   },
   {
