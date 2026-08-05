@@ -177,7 +177,7 @@ const resetPassword = async (req, res) => {
 // PATCH /api/auth/profile — any logged-in user updating their own info.
 const updateProfile = async (req, res) => {
   try {
-    const { name, phone, email } = req.body;
+    const { name, phone, email, current_role, current_company, alumni_bio, show_in_alumni_directory } = req.body;
     const user = req.user;
 
     if (email && email.toLowerCase() !== user.email) {
@@ -190,6 +190,16 @@ const updateProfile = async (req, res) => {
 
     if (name) user.name = name;
     if (phone !== undefined) user.phone = phone;
+
+    // Alumni Directory opt-in fields — harmless to accept from any account
+    // (only ever surfaced in the UI to qualifying alumni); actual directory
+    // visibility is re-checked against live Certificate records on read.
+    if (current_role !== undefined) user.current_role = current_role.trim();
+    if (current_company !== undefined) user.current_company = current_company.trim();
+    if (alumni_bio !== undefined) user.alumni_bio = alumni_bio.trim().slice(0, 600);
+    if (show_in_alumni_directory !== undefined) {
+      user.show_in_alumni_directory = show_in_alumni_directory === true || show_in_alumni_directory === 'true';
+    }
 
     if (req.file) {
       const oldKey = keyFromUrl(user.photo_url);

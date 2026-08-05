@@ -41,6 +41,25 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  // Alumni Directory — opt-in only (default false). Even when true, a user
+  // only actually appears in the directory if they currently hold at least
+  // one Certificate (checked live at read time, never cached here).
+  show_in_alumni_directory: {
+    type: Boolean,
+    default: false,
+  },
+  current_role: {
+    type: String,
+    trim: true,
+  },
+  current_company: {
+    type: String,
+    trim: true,
+  },
+  alumni_bio: {
+    type: String,
+    trim: true,
+  },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 });

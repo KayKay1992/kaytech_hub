@@ -6,6 +6,7 @@ import {
   Building2,
   CalendarDays,
   CheckSquare,
+  Contact,
   ClipboardCheck,
   ClipboardList,
   CreditCard,
@@ -86,6 +87,7 @@ const ADMIN_NAV_GROUPS = [
     items: [
       { to: '/admin/forums/student', label: 'Student Forum', icon: MessagesSquare },
       { to: '/admin/forums/alumni', label: 'Alumni Forum', icon: MessagesSquare },
+      { to: '/admin/alumni-directory', label: 'Alumni Directory', icon: Contact },
       { to: '/admin/forum-moderation', label: 'Forum Moderation', icon: ShieldAlert },
     ],
   },

@@ -44,9 +44,23 @@ const resetPasswordLimiter = rateLimit({
   message: tooManyRequests,
 });
 
+// Alumni Directory "Reach Me" messages — must run after `protect` so
+// req.user exists. Keyed per logged-in user (not per IP) since the whole
+// point is capping how many directory members one account can message,
+// not how many requests come from one network. 5 per hour.
+const alumniContactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => String(req.user._id),
+  message: { message: "You've sent several messages recently — please try again in a bit." },
+});
+
 module.exports = {
   standardFormLimiter,
   registerLimiter,
   forgotPasswordLimiter,
   resetPasswordLimiter,
+  alumniContactLimiter,
 };

@@ -1529,6 +1529,7 @@ a:hover { color: var(--color-amber); }
 .profile-card:hover { transform: none; box-shadow: var(--shadow); border-color: var(--color-border); }
 .profile-card h2 { margin: 0 0 16px; font-size: 1.1rem; }
 .profile-form { max-width: none; border: none; padding: 0; box-shadow: none; }
+.alumni-course-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
 .profile-photo-row {
   display: flex;
   align-items: center;
@@ -2921,6 +2922,33 @@ a:hover { color: var(--color-amber); }
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 24px;
   align-items: stretch;
+}
+
+/* Alumni Directory card — reuses .card base + .dashboard-course-grid. */
+.alumni-card { display: flex; flex-direction: column; gap: 14px; }
+.alumni-card__head { display: flex; align-items: center; gap: 12px; }
+.alumni-card__avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.alumni-card__avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.alumni-card__avatar-initials { color: var(--color-amber); font-family: var(--font-heading); font-weight: 600; }
+.alumni-card__name { margin: 0; font-size: 1.05rem; }
+.alumni-card__role { margin: 2px 0 0; font-size: 0.85rem; color: var(--color-text-muted); }
+.alumni-card__bio { margin: 0; font-size: 0.9rem; color: var(--color-text-muted); }
+.alumni-card__reach-btn {
+  align-self: flex-start;
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Form page header — back link + heading + intro text for every
