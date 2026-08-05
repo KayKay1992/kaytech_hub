@@ -17,7 +17,7 @@ const notificationSchema = new mongoose.Schema({
   },
   target_type: {
     type: String,
-    enum: ['all', 'all_students', 'all_instructors', 'specific_user'],
+    enum: ['all', 'all_students', 'all_instructors', 'all_alumni', 'specific_user'],
     required: true,
   },
   target_user_id: {

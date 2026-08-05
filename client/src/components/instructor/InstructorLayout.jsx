@@ -1,4 +1,4 @@
-import { Bell, BookOpen, CalendarCheck, ClipboardCheck, Contact, LayoutDashboard, MessagesSquare, Sparkles, UsersRound, Wallet } from 'lucide-react';
+import { Bell, BookOpen, Briefcase, CalendarCheck, ClipboardCheck, Contact, LayoutDashboard, MessagesSquare, Sparkles, UsersRound, Wallet } from 'lucide-react';
 import DashboardLayout from '../dashboard/DashboardLayout';
 
 // Students list is a placeholder until that module is built.
@@ -27,6 +27,7 @@ const INSTRUCTOR_NAV_GROUPS = [
       { to: '/instructor/forums/student', label: 'Student Forum', icon: MessagesSquare },
       { to: '/instructor/forums/alumni', label: 'Alumni Forum', icon: MessagesSquare },
       { to: '/instructor/alumni-directory', label: 'Alumni Directory', icon: Contact },
+      { to: '/instructor/job-board', label: 'Job Board', icon: Briefcase },
     ],
   },
 ];

@@ -1,8 +1,11 @@
 const Notification = require('../models/Notification');
 const NotificationRead = require('../models/NotificationRead');
+const { getForumAccess } = require('../utils/forumAccess');
 
 // GET /api/notifications — any authenticated user. Includes broadcasts to
-// "all", broadcasts to their role (students/instructors), and anything
+// "all", broadcasts to their role (students/instructors), broadcasts to
+// alumni (checked live — same Certificate-based rule as the Alumni Forum,
+// so a student only sees these once they actually qualify), and anything
 // targeted at them specifically.
 const listMyNotifications = async (req, res) => {
   try {
@@ -12,6 +15,9 @@ const listMyNotifications = async (req, res) => {
     ];
     if (req.user.role === 'student') conditions.push({ target_type: 'all_students' });
     if (req.user.role === 'instructor') conditions.push({ target_type: 'all_instructors' });
+
+    const access = await getForumAccess(req.user);
+    if (access.alumni.allowed) conditions.push({ target_type: 'all_alumni' });
 
     const notifications = await Notification.find({ $or: conditions })
       .sort({ created_at: -1 })
@@ -44,11 +50,16 @@ const markNotificationRead = async (req, res) => {
       return res.status(404).json({ message: 'Notification not found' });
     }
 
-    const targetsMe =
+    let targetsMe =
       notification.target_type === 'all' ||
       (notification.target_type === 'all_students' && req.user.role === 'student') ||
       (notification.target_type === 'all_instructors' && req.user.role === 'instructor') ||
       (notification.target_type === 'specific_user' && String(notification.target_user_id) === String(req.user._id));
+
+    if (!targetsMe && notification.target_type === 'all_alumni') {
+      const access = await getForumAccess(req.user);
+      targetsMe = access.alumni.allowed;
+    }
 
     if (!targetsMe) {
       return res.status(403).json({ message: 'This notification is not addressed to you' });

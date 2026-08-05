@@ -7,6 +7,7 @@ const TARGET_LABELS = {
   all: 'Everyone',
   all_students: 'All Students',
   all_instructors: 'All Instructors',
+  all_alumni: 'All Alumni',
   specific_user: null, // resolved per-notification from target_user_id
 };
 
@@ -171,6 +172,7 @@ export default function Notifications() {
                 <option value="all">Everyone</option>
                 <option value="all_students">All Students</option>
                 <option value="all_instructors">All Instructors</option>
+                <option value="all_alumni">All Alumni</option>
                 <option value="specific_user">Specific User</option>
               </select>
             </label>

@@ -76,12 +76,14 @@ import StudentCourseReviewForm from './pages/student/CourseReviewForm';
 import StudentForums from './pages/student/Forums';
 import StudentForumPost from './pages/student/ForumPost';
 import StudentAlumniDirectory from './pages/student/AlumniDirectory';
+import StudentJobBoard from './pages/student/JobBoard';
 import StudentAssistant from './pages/student/Assistant';
 import InstructorDashboard from './pages/instructor/Dashboard';
 import InstructorNotifications from './pages/instructor/Notifications';
 import InstructorForums from './pages/instructor/Forums';
 import InstructorForumPost from './pages/instructor/ForumPost';
 import InstructorAlumniDirectory from './pages/instructor/AlumniDirectory';
+import InstructorJobBoard from './pages/instructor/JobBoard';
 import InstructorAssistant from './pages/instructor/Assistant';
 import AdminCourses from './pages/admin/academy/Courses';
 import AdminCourseContent from './pages/admin/academy/CourseContent';
@@ -103,7 +105,9 @@ import InstructorPayouts from './pages/instructor/academy/Payouts';
 import AdminForums from './pages/admin/Forums';
 import AdminForumPost from './pages/admin/ForumPost';
 import AdminAlumniDirectory from './pages/admin/AlumniDirectory';
+import AdminJobBoard from './pages/admin/JobBoard';
 import AdminForumModeration from './pages/admin/ForumModeration';
+import AdminGraduateJobs from './pages/admin/GraduateJobs';
 
 function App() {
   return (
@@ -155,6 +159,7 @@ function App() {
           <Route path="forums/:forumType" element={<StudentForums />} />
           <Route path="forums/:forumType/:postId" element={<StudentForumPost />} />
           <Route path="alumni-directory" element={<StudentAlumniDirectory />} />
+          <Route path="job-board" element={<StudentJobBoard />} />
           <Route path="assistant" element={<StudentAssistant />} />
           <Route path="profile" element={<Profile />} />
         </Route>
@@ -173,6 +178,7 @@ function App() {
           <Route path="forums/:forumType" element={<InstructorForums />} />
           <Route path="forums/:forumType/:postId" element={<InstructorForumPost />} />
           <Route path="alumni-directory" element={<InstructorAlumniDirectory />} />
+          <Route path="job-board" element={<InstructorJobBoard />} />
           <Route path="assistant" element={<InstructorAssistant />} />
           <Route path="profile" element={<Profile />} />
         </Route>
@@ -227,6 +233,8 @@ function App() {
           <Route path="forums/:forumType" element={<AdminForums />} />
           <Route path="forums/:forumType/:postId" element={<AdminForumPost />} />
           <Route path="alumni-directory" element={<AdminAlumniDirectory />} />
+          <Route path="job-board" element={<AdminJobBoard />} />
+          <Route path="graduate-jobs" element={<AdminGraduateJobs />} />
           <Route path="forum-moderation" element={<AdminForumModeration />} />
           <Route path="profile" element={<Profile />} />
         </Route>

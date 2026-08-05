@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Award, Bell, BookOpen, ClipboardCheck, Contact, LayoutDashboard, MessagesSquare, Sparkles } from 'lucide-react';
+import { Award, Bell, BookOpen, Briefcase, ClipboardCheck, Contact, LayoutDashboard, MessagesSquare, Sparkles } from 'lucide-react';
 import DashboardLayout from '../dashboard/DashboardLayout';
 import api from '../../api/axios';
 
@@ -41,6 +41,7 @@ export default function StudentLayout() {
   if (access?.alumni?.allowed) {
     communityItems.push({ to: '/student/forums/alumni', label: 'Alumni Forum', icon: MessagesSquare });
     communityItems.push({ to: '/student/alumni-directory', label: 'Alumni Directory', icon: Contact });
+    communityItems.push({ to: '/student/job-board', label: 'Job Board', icon: Briefcase });
   }
 
   const navGroups = communityItems.length > 0

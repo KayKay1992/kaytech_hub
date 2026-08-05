@@ -3037,6 +3037,27 @@ a:hover { color: var(--color-amber); }
   gap: 6px;
 }
 
+/* Job Board card — reuses .card base + .dashboard-course-grid. */
+.job-board-card { display: flex; flex-direction: column; gap: 14px; }
+.job-board-card__head { display: flex; align-items: center; gap: 12px; }
+.job-board-card__logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--color-navy);
+  color: var(--color-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.job-board-card__logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.job-board-card__title { margin: 0; font-size: 1.05rem; }
+.job-board-card__company { margin: 2px 0 0; font-size: 0.85rem; color: var(--color-text-muted); }
+.job-board-card__description { margin: 0; font-size: 0.9rem; color: var(--color-text-muted); }
+.job-board-card__apply-btn { align-self: flex-start; margin-top: auto; }
+
 /* Form page header — back link + heading + intro text for every
    application/registration page (Course Registration, Job Application,
    Scholarship, Service Request, Mentorship, Workspace Reservation).

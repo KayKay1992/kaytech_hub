@@ -2,7 +2,7 @@ const Notification = require('../models/Notification');
 const ContactMessage = require('../models/ContactMessage');
 const User = require('../models/User');
 
-const TARGET_TYPES = ['all', 'all_students', 'all_instructors', 'specific_user'];
+const TARGET_TYPES = ['all', 'all_students', 'all_instructors', 'all_alumni', 'specific_user'];
 const CONTACT_STATUSES = ['new', 'read', 'responded'];
 
 // POST /api/admin/notifications — admin only
