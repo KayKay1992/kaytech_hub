@@ -9,6 +9,12 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#10142B" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- iOS doesn't support beforeinstallprompt or full manifest handling —
+         these are what actually make "Add to Home Screen" open standalone
+         (no Safari chrome) and use the right icon/status bar tint there. -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="KayTech" />
     <!-- Set data-theme before first paint so there's no light-mode flash for
          users whose OS/localStorage preference is dark. Kept in sync with
          ThemeContext.jsx's storage key and fallback logic — update both if

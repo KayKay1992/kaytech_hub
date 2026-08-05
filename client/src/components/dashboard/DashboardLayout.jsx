@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import DashboardSidebar from './DashboardSidebar';
 import DashboardTopbar from './DashboardTopbar';
+import PageLoader from '../common/PageLoader';
 import { useAuth } from '../../context/AuthContext';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
 
@@ -62,7 +63,9 @@ export default function DashboardLayout({ navGroups, brandLabel, notificationsBa
         />
 
         <div className="dashboard-layout__content">
-          <Outlet />
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </div>
       </div>
     </div>

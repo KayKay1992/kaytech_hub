@@ -539,6 +539,100 @@ a:hover { color: var(--color-amber); }
   .whatsapp-fab__pulse { animation: none; }
 }
 
+/* Suspense fallback shown while a lazy-loaded route chunk downloads. Sized
+   to fill its container — the nested Suspense inside each layout only
+   covers the content area (sidebar/header stay put), while the top-level
+   one before any layout mounts uses --full for near-viewport height. */
+.page-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 50vh;
+  padding: 40px;
+}
+.page-loader--full { min-height: 100vh; }
+.page-loader__mark {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--color-navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: page-loader-pulse 1.1s ease-in-out infinite;
+}
+.page-loader__label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+@keyframes page-loader-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.88); opacity: 0.65; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-loader__mark { animation: none; }
+}
+
+/* Custom "Install App" banner — replaces relying on the browser's own
+   inconsistent beforeinstallprompt UI. Sits above the WhatsApp FAB
+   (z-index 150) but below the mobile drawer overlay (190) so an open nav
+   menu still covers it. */
+.install-prompt {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 160;
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(16, 20, 43, 0.18);
+}
+.install-prompt__icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--color-navy);
+  color: var(--color-amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.install-prompt__text { flex: 1; min-width: 0; }
+.install-prompt__text strong { display: block; font-size: 0.95rem; }
+.install-prompt__text p { margin: 2px 0 0; font-size: 0.82rem; color: var(--color-text-muted); }
+.install-prompt__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.install-prompt__dismiss {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  border-radius: 8px;
+}
+.install-prompt__dismiss:hover { background: var(--color-bg); }
+
+@media (max-width: 480px) {
+  .install-prompt { flex-wrap: wrap; }
+  .install-prompt__text { order: 1; flex-basis: 100%; }
+  .install-prompt__icon { order: 0; }
+  .install-prompt__actions { order: 2; margin-left: auto; }
+}
+
 /* Footer */
 .site-footer {
   background: var(--color-navy);
