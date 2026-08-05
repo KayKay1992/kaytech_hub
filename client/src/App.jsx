@@ -92,6 +92,7 @@ const AdminJobBoard = lazy(() => import('./pages/admin/JobBoard'));
 const AdminForumModeration = lazy(() => import('./pages/admin/ForumModeration'));
 const AdminGraduateJobs = lazy(() => import('./pages/admin/GraduateJobs'));
 const AdminAuditLog = lazy(() => import('./pages/admin/AuditLog'));
+const AdminFinancialReports = lazy(() => import('./pages/admin/FinancialReports'));
 
 const StudentDashboard = lazy(() => import('./pages/student/Dashboard'));
 const StudentNotifications = lazy(() => import('./pages/student/Notifications'));
@@ -252,6 +253,7 @@ function App() {
               <Route path="graduate-jobs" element={<AdminGraduateJobs />} />
               <Route path="forum-moderation" element={<AdminForumModeration />} />
               <Route path="audit-log" element={<AdminAuditLog />} />
+              <Route path="financial-reports" element={<AdminFinancialReports />} />
               <Route path="profile" element={<Profile />} />
             </Route>
           </Route>

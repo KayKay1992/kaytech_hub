@@ -2024,6 +2024,25 @@ a:hover { color: var(--color-amber); }
 .payments-empty { padding: 32px 20px; text-align: center; color: var(--color-text-muted); }
 .stat-card--accent { border-color: var(--color-amber); background: color-mix(in srgb, var(--color-amber) 6%, var(--color-surface)); }
 
+/* Financial Reports (admin CSV export page) */
+.reports-date-range {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.reports-date-range label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+}
+.reports-export-grid { margin-top: 24px; }
+.reports-export-grid .card h2 { margin: 0 0 8px; font-size: 1.05rem; }
+.reports-export-grid .card p { margin: 0 0 16px; }
+
 /* "Projected" figures — informational-only money that hasn't actually been
    collected yet (e.g. projected instructor payout from outstanding student
    balances). Deliberately muted/dashed so it never reads as real ledger

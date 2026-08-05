@@ -10,6 +10,7 @@ import {
   ClipboardCheck,
   ClipboardList,
   CreditCard,
+  FileSpreadsheet,
   FileText,
   GraduationCap,
   KeyRound,
@@ -33,6 +34,7 @@ const ADMIN_NAV_GROUPS = [
     items: [
       { to: '/admin', label: 'Dashboard', end: true, icon: LayoutDashboard },
       { to: '/admin/notifications', label: 'Notifications', icon: Bell },
+      { to: '/admin/financial-reports', label: 'Financial Reports', icon: FileSpreadsheet },
     ],
   },
   {
