@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown, House, LogOut, Menu, User } from 'lucide-react';
 import NotificationBell from './NotificationBell';
+import ThemeToggle from '../common/ThemeToggle';
 import { getInitials } from '../../utils/initials';
 import { getDashboardPath } from '../../utils/roleRoutes';
 
@@ -121,6 +122,7 @@ export default function DashboardTopbar({ navGroups, notificationsBasePath, side
       <h1 className="dashboard-topbar__title">{title}</h1>
 
       <div className="dashboard-topbar__actions">
+        <ThemeToggle />
         {notificationsBasePath && <NotificationBell basePath={notificationsBasePath} />}
         <UserMenu user={user} onLogout={onLogout} />
       </div>

@@ -38,6 +38,70 @@
   color-scheme: light;
 }
 
+/* Dark theme — toggled by adding data-theme="dark" to <html> (see
+   ThemeContext.jsx). Only the semantic roles are remapped; the brand
+   swatches themselves (Navy, Amber, Teal, Slate) stay canonical constants
+   so every existing var(--color-amber)/var(--color-teal) accent keeps
+   working unchanged. Cloud (page bg) and White (card bg) are the two
+   roles that actually flip: Cloud becomes a dark neutral a shade lighter
+   than Ink Navy, and cards get a lighter-still tone so they read as
+   elevated above the page, same relationship as White-on-Cloud in light
+   mode just inverted in luminance. */
+:root[data-theme='dark'] {
+  --color-bg: #14172c;
+  --color-surface: #1c2142;
+  --color-surface-dark: #0a0c1a;
+  --color-text: #eef0fa;
+  --color-text-muted: #9aa1c2;
+  --color-border: #2a2f52;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+  --shadow-glow: 0 0 0 1px var(--color-amber), 0 16px 40px rgba(255, 176, 32, 0.28);
+  color-scheme: dark;
+}
+
+/* Tinted chips (badges, status pills, inline form banners) were designed
+   as "dark text on a pale tint" — that tint is translucent, so over a
+   dark page it composites into a muddy low-contrast chip instead. In dark
+   mode these flip to "bright accent text on a dark tint" so they keep
+   popping instead of going muddy. Scoped with :where() (zero specificity)
+   so more specific rules — e.g. .dark-form .form-error, which is already
+   built for a permanently-dark background — are untouched. */
+:where([data-theme='dark']) .badge:not(.badge--on-dark):not(.badge--ai) {
+  background: color-mix(in srgb, var(--color-amber) 22%, transparent);
+  color: var(--color-amber);
+}
+:where([data-theme='dark']) .invite-status--unused {
+  background: color-mix(in srgb, var(--color-amber) 22%, transparent);
+  color: var(--color-amber);
+}
+:where([data-theme='dark']) .form-success {
+  background: color-mix(in srgb, var(--color-amber) 20%, transparent);
+  color: var(--color-amber);
+}
+:where([data-theme='dark']) .form-error,
+:where([data-theme='dark']) .invite-status--expired {
+  background: color-mix(in srgb, var(--color-danger) 20%, transparent);
+  color: #fca5a5;
+}
+:where([data-theme='dark']) .user-menu__item--danger { color: #fca5a5; }
+
+/* Ink Navy panels (Hero, dashboard hero, dark-panel forms, scholarship
+   promo) keep their Ink Navy background in dark mode — but now that the
+   page around them is dark too, their navy-tinted shadow disappears into
+   it. Give them a visible edge instead of looking like a rendering bug. */
+:where([data-theme='dark']) .hero,
+:where([data-theme='dark']) .form-panel,
+:where([data-theme='dark']) .dashboard-hero,
+:where([data-theme='dark']) .scholarship-promo {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
+/* The sidebar is already a permanently-dark Navy panel too — same deal. */
+:where([data-theme='dark']) .dashboard-sidebar {
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 * { box-sizing: border-box; }
 
 body { margin: 0; }
@@ -125,8 +189,8 @@ a:hover { color: var(--color-amber); }
 .btn:hover { text-decoration: none; transform: scale(1.035); }
 .btn--primary { background: var(--color-amber); color: var(--color-navy); }
 .btn--primary:hover { color: var(--color-navy); box-shadow: 0 10px 24px rgba(255, 176, 32, 0.35); }
-.btn--ghost { background: transparent; color: var(--color-navy); border-color: var(--color-border); }
-.btn--ghost:hover { border-color: var(--color-amber); color: var(--color-navy); }
+.btn--ghost { background: transparent; color: var(--color-text); border-color: var(--color-border); }
+.btn--ghost:hover { border-color: var(--color-amber); color: var(--color-text); }
 .btn--ghost-on-dark { background: transparent; color: #fff; border-color: rgba(255, 255, 255, 0.35); }
 .btn--ghost-on-dark:hover { border-color: var(--color-amber); color: var(--color-amber); }
 .btn--danger { background: var(--color-danger); color: #fff; }
@@ -257,7 +321,7 @@ a:hover { color: var(--color-amber); }
   font-family: var(--font-heading);
   font-weight: 600;
   font-size: 1.3rem;
-  color: var(--color-navy);
+  color: var(--color-text);
   white-space: nowrap;
 }
 .site-header__logo-text span { color: var(--color-amber); font-weight: 500; }
@@ -274,7 +338,7 @@ a:hover { color: var(--color-amber); }
 
 .site-header__link {
   position: relative;
-  color: var(--color-slate);
+  color: var(--color-text-muted);
   font-size: 0.9rem;
   font-weight: 500;
   padding-bottom: 4px;
@@ -291,7 +355,7 @@ a:hover { color: var(--color-amber); }
   border-radius: 2px;
   transition: right 0.2s ease;
 }
-.site-header__link:hover, .site-header__link.is-active { color: var(--color-navy); }
+.site-header__link:hover, .site-header__link.is-active { color: var(--color-text); }
 .site-header__link:hover::after, .site-header__link.is-active::after { right: 0; }
 
 /* "More" dropdown — keeps secondary links (Blog/Events/Careers) from
@@ -305,12 +369,12 @@ a:hover { color: var(--color-amber); }
   border: none;
   padding: 0 0 4px;
   font: inherit;
-  color: var(--color-slate);
+  color: var(--color-text-muted);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
 }
-.site-header__more-trigger:hover { color: var(--color-navy); }
+.site-header__more-trigger:hover { color: var(--color-text); }
 .site-header__more-caret { font-size: 0.65em; transition: transform 0.2s ease; }
 .site-header__more-trigger[aria-expanded="true"] .site-header__more-caret { transform: rotate(180deg); }
 .site-header__more-menu {
@@ -901,7 +965,7 @@ a:hover { color: var(--color-amber); }
   border-top: 1px solid var(--color-border);
 }
 .story-card__byline-name { font-weight: 500; font-size: 0.92rem; color: var(--color-text); }
-.story-card__byline-date { font-size: 0.78rem; color: var(--color-slate); }
+.story-card__byline-date { font-size: 0.78rem; color: var(--color-text-muted); }
 
 /* Testimonial card — same treatment, Signal Amber accent (stars, quote
    mark) instead of Circuit Teal to read as a distinct flavor of social proof. */
@@ -964,7 +1028,7 @@ a:hover { color: var(--color-amber); }
   border-top: 1px solid var(--color-border);
 }
 .testimonial-card__byline-name { font-weight: 500; font-size: 0.92rem; color: var(--color-text); }
-.testimonial-card__byline-date { font-size: 0.78rem; color: var(--color-slate); }
+.testimonial-card__byline-date { font-size: 0.78rem; color: var(--color-text-muted); }
 
 /* Mobile carousel — Success Stories / Testimonials on small screens, one
    card at a time, auto-advancing + swipeable, random order per visit. */
@@ -1378,13 +1442,13 @@ a:hover { color: var(--color-amber); }
   border-radius: 50%;
   color: var(--color-text-muted);
 }
-.dashboard-topbar__home:hover { background: var(--color-surface); color: var(--color-navy); }
+.dashboard-topbar__home:hover { background: var(--color-surface); color: var(--color-text); }
 .dashboard-topbar__title {
   margin: 0;
   font-family: var(--font-heading);
   font-size: 1.15rem;
   font-weight: 600;
-  color: var(--color-navy);
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1407,7 +1471,7 @@ a:hover { color: var(--color-amber); }
   padding: 0;
   border: none;
   background: transparent;
-  color: var(--color-navy);
+  color: var(--color-text);
   cursor: pointer;
   border-radius: 8px;
   flex-shrink: 0;
@@ -1462,7 +1526,7 @@ a:hover { color: var(--color-amber); }
 .user-menu__header strong {
   display: block;
   font-size: 0.9rem;
-  color: var(--color-navy);
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2146,10 +2210,30 @@ a:hover { color: var(--color-amber); }
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  color: var(--color-navy);
+  color: var(--color-text);
   flex-shrink: 0;
 }
 .notification-bell:hover { background: var(--color-bg); text-decoration: none; }
+
+/* Sun/moon theme toggle — Topbar (dashboards) and Header (public), so it
+   needs to look right on both a themable-surface bg and inside the mobile
+   drawer's own surface bg. */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.theme-toggle:hover { background: var(--color-bg); }
+.theme-toggle--in-drawer { align-self: flex-start; }
 .notification-bell__badge {
   position: absolute;
   top: 0;
@@ -3464,7 +3548,7 @@ a:hover { color: var(--color-amber); }
 .assistant-markdown h3,
 .assistant-markdown h4 {
   font-family: var(--font-heading);
-  color: var(--color-navy);
+  color: var(--color-text);
   margin: 16px 0 8px;
   line-height: 1.3;
 }
@@ -3472,7 +3556,7 @@ a:hover { color: var(--color-amber); }
 .assistant-markdown h2 { font-size: 1.15rem; }
 .assistant-markdown h3 { font-size: 1.05rem; }
 .assistant-markdown h4 { font-size: 0.98rem; }
-.assistant-markdown strong { font-weight: 700; color: var(--color-navy); }
+.assistant-markdown strong { font-weight: 700; color: var(--color-text); }
 .assistant-markdown em { font-style: italic; }
 .assistant-markdown ul,
 .assistant-markdown ol {
@@ -3482,7 +3566,7 @@ a:hover { color: var(--color-amber); }
 .assistant-markdown li { margin-bottom: 4px; }
 .assistant-markdown li > ul,
 .assistant-markdown li > ol { margin-top: 4px; margin-bottom: 0; }
-.assistant-markdown a { color: var(--color-navy); text-decoration: underline; text-underline-offset: 2px; }
+.assistant-markdown a { color: var(--color-text); text-decoration: underline; text-underline-offset: 2px; }
 .assistant-markdown a:hover { color: var(--color-amber); }
 .assistant-markdown blockquote {
   margin: 0 0 10px;

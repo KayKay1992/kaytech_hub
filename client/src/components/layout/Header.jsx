@@ -3,6 +3,7 @@ import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getDashboardPath } from '../../utils/roleRoutes';
 import useBodyScrollLock from '../../hooks/useBodyScrollLock';
+import ThemeToggle from '../common/ThemeToggle';
 
 // Primary links stay inline on desktop; MORE_LABELS get grouped into a
 // "More" dropdown so the nav never has enough items to wrap. The mobile
@@ -146,6 +147,7 @@ export default function Header() {
           <MoreDropdown />
         </nav>
         <div className="site-header__actions-desktop">
+          <ThemeToggle />
           <HeaderActions />
         </div>
 
@@ -179,6 +181,7 @@ export default function Header() {
           </nav>
 
           <div className="site-header__actions">
+            <ThemeToggle className="theme-toggle--in-drawer" />
             <HeaderActions onNavigate={closeMenu} />
           </div>
         </div>
