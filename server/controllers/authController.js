@@ -128,7 +128,7 @@ const forgotPassword = async (req, res) => {
       expires_at: new Date(Date.now() + RESET_TOKEN_TTL_MS),
     });
 
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${rawToken}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
     await sendPasswordResetEmail(user.email, resetUrl);
 
     res.json(genericResponse);

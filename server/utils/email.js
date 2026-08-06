@@ -8,7 +8,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 // RESEND_FROM_EMAIL once a verified sending domain is configured.
 const FROM_ADDRESS = process.env.RESEND_FROM_EMAIL || 'KayTech Hub <onboarding@resend.dev>';
 
-const SITE_URL = process.env.CLIENT_URL || 'https://kaytechhub.com';
+const SITE_URL = process.env.FRONTEND_URL || 'https://kaytechhub.com';
 
 const money = (amount) => `₦${Number(amount || 0).toLocaleString()}`;
 

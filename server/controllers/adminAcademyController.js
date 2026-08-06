@@ -1248,7 +1248,7 @@ const notifyCourseWaitlist = async (req, res) => {
 
     const waitingEntries = await CohortWaitlistEntry.find({ course_id: req.params.courseId, status: 'waiting' });
 
-    const registerUrl = `${process.env.CLIENT_URL || 'https://kaytechhub.com'}/courses/${req.params.courseId}/register`;
+    const registerUrl = `${process.env.FRONTEND_URL || 'https://kaytechhub.com'}/courses/${req.params.courseId}/register`;
     await Promise.all(waitingEntries.map((entry) => sendCohortWaitlistOpenEmail(entry.email, {
       name: entry.name,
       courseTitle: cohort.course_id?.title || 'your course',

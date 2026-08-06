@@ -61,7 +61,18 @@ require('./jobs/paymentReminderCron');
 // instead of the reverse proxy's IP once deployed (Render, Railway, etc.).
 app.set('trust proxy', 1);
 
-app.use(cors());
+// FRONTEND_URL is the deployed client's origin (e.g. https://kaytechhub.com).
+// Also allow common localhost dev ports so local frontend dev keeps working
+// regardless of which origin is set in production.
+const allowedOrigins = [process.env.FRONTEND_URL, 'http://localhost:5173', 'http://localhost:3000'].filter(Boolean);
+app.use(cors({
+  origin: (origin, callback) => {
+    // No origin = same-origin/non-browser request (curl, server-to-server, health checks).
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 
